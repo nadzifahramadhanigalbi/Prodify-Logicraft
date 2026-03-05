@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Plus,
   CheckCircle,
@@ -302,22 +303,50 @@ const TimeManager = () => {
     }
   };
 
+  // Add event listener for auto-scroll during drag
+  const onDragUpdate = (update) => {
+    if (!update.destination) return;
+
+    // Smooth auto scroll when dragging near the edge
+    const scrollEdge = 100; // pixels from edge to trigger scroll
+    const maxScrollStep = 20;
+
+    const handleScroll = (e) => {
+      const clientY = e.clientY || e.touches?.[0]?.clientY;
+      if (!clientY) return;
+
+      if (clientY < scrollEdge) {
+        window.scrollBy({ top: -maxScrollStep, behavior: 'instant' });
+      } else if (window.innerHeight - clientY < scrollEdge) {
+        window.scrollBy({ top: maxScrollStep, behavior: 'instant' });
+      }
+    };
+
+    // We can't attach native mousemove easily to dnd without complex refs,
+    // so we rely on the user dragging into the Droppable areas (which triggers onDragUpdate repeatedly if moving between lists)
+  };
+
+
   // --- 4. CALENDAR FUNCTIONS ---
   const openScheduleModal = (task) => {
-    setTaskToSchedule(task);
+    setTaskToSchedule({ ...task });
+    // make sure time and date are properly set before opening to avoid blank errors
+    setScheduleTime("08:00");
+    setScheduleDate(new Date().toISOString().split("T")[0]);
     setShowScheduleModal(true);
   };
 
   const confirmSchedule = (e) => {
     e.preventDefault();
+    if (!taskToSchedule || !scheduleDate || !scheduleTime) return;
     const dateStr = scheduleDate;
 
     const newBlock = {
       id: Date.now().toString(),
       taskId: taskToSchedule.id,
       title: taskToSchedule.title,
-      time: scheduleTime,
-      quadrant: taskToSchedule.quadrant,
+      time: scheduleTime || "00:00",
+      quadrant: taskToSchedule.quadrant || "unassigned",
       energy: taskToSchedule.energy || 1,
       completed: false,
     };
@@ -330,7 +359,8 @@ const TimeManager = () => {
     });
 
     setShowScheduleModal(false);
-    showNotification(`Tugas dijadwalkan pada jam ${scheduleTime}`);
+    showNotification(`Tugas dijadwalkan pada jam ${scheduleTime} `);
+    setTimeout(() => setTaskToSchedule(null), 300); // clear after animation
   };
 
   const removeBlock = (dateStr, blockId) => {
@@ -427,233 +457,186 @@ const TimeManager = () => {
   }
 
   return (
-    <div className="h-full flex flex-col items-center justify-start p-4 py-8 md:p-8 animate-fade-in custom-scrollbar overflow-y-auto">
-      <div className="w-full max-w-6xl mx-auto space-y-12">
-        {/* Header & Tabs */}
-        <div className="flex flex-col md:flex-row items-center justify-between liquid-glass p-4 rounded-3xl spatial-shadow gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-indigo-100 rounded-2xl">
-              <Layers className="w-8 h-8 text-indigo-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-                Time & Task Hub
-              </h1>
-              <p className="text-sm font-medium text-slate-500">
-                Prioritaskan di Matrix, Eksekusi di Kalender.
-              </p>
-            </div>
-          </div>
+    <>
+      <div className="min-h-full flex flex-col p-4 md:p-8 animate-fade-in pb-32">
+        <div className="w-full max-w-6xl mx-auto space-y-8">
 
-          <div className="flex bg-slate-100/50 p-1.5 rounded-2xl w-full md:w-auto backdrop-blur-sm">
-            <div className="px-6 py-2.5 rounded-xl font-bold bg-white/80 text-indigo-700 shadow-sm flex items-center gap-2">
-              <Target className="w-4 h-4" /> Workspace Terpadu
-            </div>
-          </div>
-        </div>
-
-        {/* --- 1. VIEW: TASK DEADLINE MANAGER --- */}
-        <div className="liquid-glass p-6 lg:p-8 rounded-3xl spatial-shadow animate-fade-in-up flex flex-col gap-6 w-full">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800">
-                Manajemen Deadline Tugas
-              </h2>
-              <p className="text-slate-500 text-sm mt-1">
-                Pantau tenggat waktu tugasmu, otomatis mengingatkan 2 Jam
-                sebelum hangus!
-              </p>
-            </div>
-            <div className="flex bg-indigo-50 p-3 rounded-2xl border border-indigo-100 items-center justify-center">
-              <BellRing className="w-6 h-6 text-indigo-500 mr-3 animate-pulse" />
-              <div className="text-sm">
-                <p className="font-bold text-indigo-700">Sistem Notifikasi</p>
-                <p className="text-indigo-600/80 text-xs text-left">
-                  Peringatan otomatis aktif
-                </p>
+          {/* ===== HEADER ===== */}
+          <div className="animated-gradient-border liquid-glass p-6 md:p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 spatial-shadow">
+            <div className="flex items-center gap-5 z-10 relative">
+              <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center border-2 border-indigo-200 shadow-inner">
+                <Layers className="w-7 h-7 text-indigo-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Time &amp; Task Hub</h1>
+                <p className="text-slate-500 font-medium text-sm mt-1">Prioritaskan di Matrix, Eksekusi di Kalender.</p>
               </div>
             </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md w-full md:w-auto justify-center"
+            >
+              <Plus className="w-5 h-5" /> Tambah Agenda Baru
+            </button>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Add Task Form */}
-            <div className="w-full xl:w-1/3">
-              <form
-                onSubmit={handleAddDeadlineTask}
-                className="bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-white spatial-shadow lg:sticky lg:top-10"
-              >
-                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-indigo-500" />
-                  Tambah Tugas Baru
-                </h3>
+          {/* ===== SECTION 1: DEADLINE TRACKER ===== */}
+          <div className="liquid-glass p-6 lg:p-8 rounded-3xl spatial-shadow">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+              <div>
+                <h2 className="text-xl font-black text-slate-800 flex items-center gap-3">
+                  <span className="w-9 h-9 bg-rose-100 rounded-xl flex items-center justify-center">
+                    <BellRing className="w-5 h-5 text-rose-600" />
+                  </span>
+                  Manajemen Deadline Tugas
+                </h2>
+                <p className="text-slate-500 text-sm mt-1.5 ml-12">Pantau tenggat waktu, otomatis mengingatkan 2 jam sebelum hangus.</p>
+              </div>
+              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold shrink-0">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                Notifikasi Aktif
+              </div>
+            </div>
 
-                <div className="space-y-4">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Add Deadline Form */}
+              <div className="w-full lg:w-80 shrink-0">
+                <form
+                  onSubmit={handleAddDeadlineTask}
+                  className="bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-slate-200/80 shadow-sm lg:sticky lg:top-24 space-y-4"
+                >
+                  <h3 className="font-bold text-slate-700 flex items-center gap-2 text-sm uppercase tracking-wider">
+                    <Plus className="w-4 h-4 text-indigo-500" /> Tugas Baru
+                  </h3>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                      Nama Tugas
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Tugas</label>
                     <input
                       type="text"
                       value={newDeadlineTask}
                       onChange={(e) => setNewDeadlineTask(e.target.value)}
                       placeholder="Mengerjakan laporan..."
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder:text-slate-400"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 text-sm"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                      Deadline (Tenggat Waktu)
-                    </label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Deadline</label>
                     <input
                       type="datetime-local"
                       value={newDeadlineTime}
                       onChange={(e) => setNewDeadlineTime(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all text-slate-700"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all text-slate-700 text-sm"
                       required
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full mt-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
                   >
-                    <Plus className="w-5 h-5" /> Tabung Tugas
+                    <Plus className="w-4 h-4" /> Tambahkan
                   </button>
-                </div>
-              </form>
-            </div>
+                </form>
+              </div>
 
-            {/* Task List */}
-            <div className="w-full xl:w-2/3 flex flex-col gap-4">
-              {sortedDeadlineTasks.length === 0 ? (
-                <div className="bg-slate-50 p-12 text-center rounded-2xl border border-slate-200 flex flex-col items-center justify-center w-full min-h-[300px]">
-                  <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-4">
-                    <Check className="w-10 h-10" />
+              {/* Task List */}
+              <div className="flex-1 flex flex-col gap-3">
+                {sortedDeadlineTasks.length === 0 ? (
+                  <div className="bg-emerald-50/80 border border-emerald-100 p-12 text-center rounded-2xl flex flex-col items-center justify-center min-h-[250px]">
+                    <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                      <Check className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-700">Tidak Ada Deadline Aktif!</h3>
+                    <p className="text-slate-500 mt-1.5 text-sm">Kamu bebas! Semua tugasmu sudah terkendali.</p>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-800">
-                    Tidak Ada Deadline!
-                  </h3>
-                  <p className="text-slate-500 mt-2">
-                    Bagus sekali! Semua tugasmu sudah selesai, wani santai
-                    sejenak.
-                  </p>
-                </div>
-              ) : (
-                sortedDeadlineTasks.map((task) => {
-                  const status = calculateDeadlineStatus(task.deadline);
-                  const isExpired =
-                    new Date(task.deadline).getTime() < new Date().getTime();
-
-                  return (
-                    <div
-                      key={task.id}
-                      className={`group bg-white p-5 rounded-2xl border transition-all flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between ${task.completed ? "border-slate-100 bg-slate-50/50 opacity-60" : isExpired ? "border-rose-200" : "border-slate-200 hover:border-indigo-300"}`}
-                    >
-                      <button
-                        onClick={() => toggleDeadlineTask(task.id)}
-                        className={`mt-1 shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${task.completed ? "bg-emerald-500 border-emerald-500" : "border-slate-300 hover:border-indigo-500"}`}
+                ) : (
+                  sortedDeadlineTasks.map((task) => {
+                    const status = calculateDeadlineStatus(task.deadline);
+                    const isExpired = new Date(task.deadline).getTime() < new Date().getTime();
+                    return (
+                      <div
+                        key={task.id}
+                        className={`group bg-white p-4 rounded-2xl border transition-all flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between shadow-sm ${task.completed ? "border-slate-100 bg-slate-50/50 opacity-60" : isExpired ? "border-rose-200 bg-rose-50/30" : "border-slate-200 hover:border-indigo-300 hover:shadow-md"}`}
                       >
-                        {task.completed && (
-                          <Check className="w-4 h-4 text-white" />
-                        )}
-                      </button>
-
-                      <div className="flex flex-col flex-1">
-                        <h4
-                          className={`font-bold text-lg leading-tight ${task.completed ? "text-slate-400 line-through" : "text-slate-800"}`}
-                        >
-                          {task.text}
-                        </h4>
-                        <div className="flex flex-wrap items-center gap-3 mt-2 text-xs font-semibold">
-                          <div
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${task.completed ? "bg-slate-100 text-slate-500 border-slate-200" : status.border + " " + status.color}`}
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <button
+                            onClick={() => toggleDeadlineTask(task.id)}
+                            className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${task.completed ? "bg-emerald-500 border-emerald-500" : "border-slate-300 hover:border-indigo-500"}`}
                           >
-                            <Clock className="w-3.5 h-3.5" />
-                            {status.label}
-                          </div>
-                          <div className="flex items-center gap-1.5 text-slate-500">
-                            <CalendarIcon className="w-3.5 h-3.5" />
-                            {new Date(task.deadline).toLocaleString("id-ID", {
-                              dateStyle: "long",
-                              timeStyle: "short",
-                            })}
+                            {task.completed && <Check className="w-3.5 h-3.5 text-white" />}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`font-bold text-base leading-tight truncate ${task.completed ? "text-slate-400 line-through" : "text-slate-800"}`}>
+                              {task.text}
+                            </h4>
+                            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                              <span className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border text-xs font-bold ${task.completed ? "bg-slate-100 text-slate-500 border-slate-200" : status.border + " " + status.color}`}>
+                                <Clock className="w-3 h-3" /> {status.label}
+                              </span>
+                              <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                                <CalendarIcon className="w-3 h-3" />
+                                {new Date(task.deadline).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-1 sm:ml-2">
+                          <button
+                            onClick={() => transferDeadlineTask(task)}
+                            className="shrink-0 p-2 text-indigo-500 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-colors"
+                            title="Kirim ke Matrix"
+                          >
+                            <MoveRight className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteDeadlineTask(task.id)}
+                            className="shrink-0 p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition-colors"
+                            title="Hapus"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-
-                      <div className="flex items-center sm:ml-4 sm:flex-col sm:gap-2">
-                        <button
-                          onClick={() => transferDeadlineTask(task)}
-                          className="shrink-0 p-2 text-indigo-500 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
-                          title="Kirim ke Agenda / Matrix"
-                        >
-                          <MoveRight className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => deleteDeadlineTask(task.id)}
-                          className="shrink-0 p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
-                          title="Hapus Tugas"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Wrapping Calendar and Matrix in Context to enable cross-view dragging */}
-        <DragDropContext onDragEnd={onDragEnd}>
-          {/* --- 2. VIEW: WEEKLY CALENDAR & SCHEDULE --- */}
-          <div className="pt-8 border-t border-slate-200 animate-fade-in-up space-y-6">
-            {/* Weekly Horizontal Calendar */}
-            <div className="liquid-glass rounded-3xl p-4 spatial-shadow">
-              <div className="flex justify-between items-center mb-4 px-2">
-                <h2 className="text-lg font-bold text-slate-700">
-                  Kalender 7-Hari Ke Depan
+          {/* ===== DragDropContext wraps Calendar + Matrix ===== */}
+          <DragDropContext onDragEnd={onDragEnd} onDragUpdate={onDragUpdate}>
+
+            {/* ===== SECTION 2: WEEKLY CALENDAR + SCHEDULE ===== */}
+            <div className="liquid-glass rounded-3xl spatial-shadow overflow-hidden">
+              {/* 7-Day Pill Selector */}
+              <div className="p-5 border-b border-slate-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5 text-indigo-500" /> Kalender 7-Hari Ke Depan
                 </h2>
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
-                >
-                  <Plus className="w-4 h-4" /> Tambah Agenda
-                </button>
               </div>
-              <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 px-2">
+              <div className="flex gap-2 overflow-x-auto p-4 border-b border-slate-100 custom-scrollbar pb-4">
                 {next7Days.map((day, idx) => {
                   const isSelected = isSameDay(day, currentDate);
                   const isToday = isSameDay(day, new Date());
                   const dateKey = day.toISOString().split("T")[0];
                   const blocksCount = (scheduledBlocks[dateKey] || []).length;
-
                   return (
                     <button
                       key={idx}
                       onClick={() => setCurrentDate(day)}
-                      className={`flex-shrink-0 w-[100px] flex flex-col items-center p-3 rounded-2xl transition-all cursor-pointer ${isSelected ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-105" : "bg-slate-50 hover:bg-indigo-50 text-slate-600 border border-slate-200"}`}
+                      className={`shrink-0 w-[88px] flex flex-col items-center p-3 rounded-2xl transition-all cursor-pointer ${isSelected ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-105" : "bg-slate-50 hover:bg-indigo-50 text-slate-600 border border-slate-200"}`}
                     >
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? "text-indigo-200" : "text-slate-400"}`}
-                      >
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? "text-indigo-200" : "text-slate-400"}`}>
                         {day.toLocaleDateString("id-ID", { weekday: "short" })}
                       </span>
-                      <span className="text-2xl font-black my-1">
-                        {day.getDate()}
-                      </span>
+                      <span className="text-2xl font-black my-1">{day.getDate()}</span>
                       {blocksCount > 0 ? (
                         <div className="flex items-center gap-1 text-[10px] font-bold">
-                          <div
-                            className={`w-2 h-2 rounded-full ${isSelected ? "bg-emerald-400" : "bg-indigo-500"}`}
-                          ></div>
-                          {blocksCount} agenda
+                          <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-emerald-400" : "bg-indigo-500"}`}></div>
+                          {blocksCount}
                         </div>
                       ) : (
-                        <span
-                          className={`text-[10px] font-bold ${isSelected ? "text-indigo-300" : "text-slate-400"}`}
-                        >
+                        <span className={`text-[10px] font-bold ${isSelected ? "text-indigo-300" : "text-slate-400"}`}>
                           {isToday ? "Hari Ini" : "Kosong"}
                         </span>
                       )}
@@ -661,328 +644,219 @@ const TimeManager = () => {
                   );
                 })}
               </div>
-            </div>
 
-            {/* Daily Schedule Split */}
-            <div className="liquid-glass rounded-3xl p-6 spatial-shadow flex flex-col md:flex-row gap-8">
-              {/* Left side: Timeline */}
-              <div className="flex-1">
-                <div className="flex flex-col mb-6 border-b border-slate-100 pb-4 gap-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                      <Clock className="w-6 h-6 text-indigo-600" />
-                      Jadwal: {getDayFormatted(currentDate)}
+              {/* Schedule Content */}
+              <div className="flex flex-col md:flex-row gap-0">
+                {/* Timeline */}
+                <div className="flex-1 p-6">
+                  {/* Energy Barometer */}
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-5 mb-6 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full -mr-10 -mt-10 blur-2xl pointer-events-none"></div>
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-sm font-black text-slate-700 flex items-center gap-2">
+                          <Sun className="w-4 h-4 text-amber-500" /> Kapasitas Mental Harian
+                        </h3>
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${isBurnout ? "bg-rose-50 text-rose-700 border-rose-200" : currentDailyEnergy >= MAX_DAILY_ENERGY * 0.8 ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                          {currentDailyEnergy} / {MAX_DAILY_ENERGY} Koin
+                        </span>
+                      </div>
+                      <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${isBurnout ? "bg-rose-500" : currentDailyEnergy >= MAX_DAILY_ENERGY * 0.8 ? "bg-amber-500" : "bg-emerald-500"}`}
+                          style={{ width: `${Math.min((currentDailyEnergy / MAX_DAILY_ENERGY) * 100, 100)}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center gap-1.5">
+                          <div className={`p-1 rounded-lg border ${synergyState === "buffed" ? "bg-emerald-50 border-emerald-200" : synergyState === "debuffed" ? "bg-rose-50 border-rose-200" : "bg-slate-50 border-slate-200"}`}>
+                            <Sparkles className={`w-3.5 h-3.5 ${synergyState === "buffed" ? "text-emerald-500" : synergyState === "debuffed" ? "text-rose-500" : "text-slate-400"}`} />
+                          </div>
+                          <span className="text-xs font-bold text-slate-500">
+                            Synergy: <span className={synergyState === "buffed" ? "text-emerald-600" : synergyState === "debuffed" ? "text-rose-600" : "text-slate-600"}>
+                              {synergyState === "buffed" ? "ASCENDED (+3)" : synergyState === "debuffed" ? "BURNOUT (-3)" : "NORMAL"}
+                            </span>
+                          </span>
+                        </div>
+                        {isBurnout && (
+                          <span className="flex items-center gap-1 text-xs font-bold text-rose-600 animate-pulse">
+                            <AlertTriangle className="w-3.5 h-3.5" /> Overload!
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Schedule Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-base font-black text-slate-700 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-indigo-500" /> {getDayFormatted(currentDate)}
                     </h2>
                   </div>
 
-                  {/* Capacity Barometer & Burnout Warning */}
-                  <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50 mt-6 animate-fade-in-up relative overflow-hidden spatial-hover">
-                    {/* Subtle aesthetic element in the background */}
-                    <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                      <Sun className="w-48 h-48 text-indigo-900" />
-                    </div>
-
-                    <div className="relative z-10">
-                      <div className="flex justify-between items-end mb-4">
-                        <div>
-                          <h3 className="text-slate-800 text-lg font-black flex items-center gap-2">
-                            <Sun className="w-5 h-5 text-amber-500" />
-                            Capacity Barometer
-                          </h3>
-                          <p className="text-slate-500 text-xs mt-1 font-medium">
-                            Kapasitas mental harianmu berdasarkan Koin Energi.
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-3xl font-black text-indigo-700">
-                            {currentDailyEnergy}
-                          </span>
-                          <span className="text-slate-400 font-bold">
-                            {" "}
-                            / {MAX_DAILY_ENERGY}
-                          </span>
-                        </div>
+                  {/* Timeline Blocks */}
+                  <div className="space-y-3">
+                    {todayBlocks.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl">
+                        <Sun className="w-10 h-10 text-amber-200 mb-3" />
+                        <p className="font-bold text-slate-600">Hari ini belum ada jadwal.</p>
+                        <p className="text-sm text-slate-400 mt-1">Seret tugas dari panel kanan ke matrix di bawah, lalu jadwalkan.</p>
                       </div>
-
-                      <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-200">
-                        <div
-                          className={`h-full rounded-full transition-all duration-1000 ${energyColor}`}
-                          style={{
-                            width: `${Math.min((currentDailyEnergy / MAX_DAILY_ENERGY) * 100, 100)}%`,
-                          }}
-                        >
-                          <div className="w-full h-full bg-white/20 animate-pulse"></div>
-                        </div>
-                      </div>
-
-                      {isBurnout && (
-                        <div className="mt-4 bg-rose-50 border border-rose-200 p-3 rounded-xl flex items-start gap-3 animate-pulse">
-                          <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-rose-800 font-bold text-sm">
-                              PERINGATAN: Overload Kapasitas!
-                            </p>
-                            <p className="text-rose-600/80 text-xs mt-1">
-                              Beban kerjamu hari ini melebihi ambang batas.
-                              Riskan Burnout.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Synergy State Indicator */}
-                      <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                        <div className="flex items-center gap-2">
+                    ) : (
+                      todayBlocks.map((block) => {
+                        const parentTask = tasks.find((t) => t.id === block.taskId);
+                        const resolvedQuadrant = parentTask ? parentTask.quadrant : block.quadrant;
+                        const quad = quadrants.find((q) => q.id === resolvedQuadrant) || {
+                          title: "Belum diprioritaskan",
+                          color: "text-slate-400",
+                          bg: "bg-slate-50",
+                          border: "border-slate-200",
+                        };
+                        return (
                           <div
-                            className={`p-1.5 rounded-lg border ${synergyState === "buffed" ? "bg-emerald-50 border-emerald-200" : synergyState === "debuffed" ? "bg-rose-50 border-rose-200" : "bg-slate-50 border-slate-200"}`}
+                            key={block.id}
+                            className={`flex items-stretch gap-4 p-4 rounded-2xl border transition-all hover:shadow-md ${quad.bg} ${quad.border}`}
                           >
-                            <Sparkles
-                              className={`w-4 h-4 ${synergyState === "buffed" ? "text-emerald-500" : synergyState === "debuffed" ? "text-rose-500" : "text-slate-400"}`}
-                            />
-                          </div>
-                          <span className="text-xs font-bold text-slate-500">
-                            Life-RPG Synergy:{" "}
-                            <span
-                              className={
-                                synergyState === "buffed"
-                                  ? "text-emerald-600 uppercase"
-                                  : synergyState === "debuffed"
-                                    ? "text-rose-600 uppercase"
-                                    : "text-slate-500 uppercase"
-                              }
+                            <div className="flex flex-col items-center justify-center pr-4 border-r border-slate-200/50 min-w-[70px]">
+                              <span className="text-base font-black text-slate-700">{block.time}</span>
+                            </div>
+                            <div className="flex-1 flex flex-col justify-center">
+                              <h4 className="font-bold text-slate-800 text-sm">{block.title}</h4>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`text-[10px] font-bold uppercase tracking-wider ${quad.color}`}>{quad.title}</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="text-[10px] font-bold text-indigo-500 flex items-center gap-0.5">
+                                  <Target className="w-3 h-3" /> {block.energy} Koin
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => removeBlock(dateStrKey, block.id)}
+                              className="text-slate-300 hover:text-rose-500 self-center p-1.5 rounded-xl hover:bg-white/60 transition-colors"
                             >
-                              {synergyState === "buffed"
-                                ? "ASCENDED (+3 Koin)"
-                                : synergyState === "debuffed"
-                                  ? "BURNOUT (-3 Koin)"
-                                  : "NORMAL (10 Koin)"}
-                            </span>
-                          </span>
-                        </div>
-                        <div className="text-[10px] font-medium text-slate-400 sm:text-right max-w-xs leading-tight">
-                          Kapasitas maksimal dipengaruhi oleh keseimbangan
-                          rutinitas (Habits) harianmu.
-                        </div>
-                      </div>
-                    </div>
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  {todayBlocks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500">
-                      <Sun className="w-12 h-12 text-amber-200 mb-4" />
-                      <p className="font-bold">Hari ini belum ada jadwal.</p>
-                      <p className="text-sm">
-                        Buka tab Priority Matrix untuk menarik tugas ke
-                        kalender.
-                      </p>
-                    </div>
-                  ) : (
-                    todayBlocks.map((block) => {
-                      const parentTask = tasks.find(
-                        (t) => t.id === block.taskId,
-                      );
-                      const resolvedQuadrant = parentTask
-                        ? parentTask.quadrant
-                        : block.quadrant;
-                      const quad = quadrants.find(
-                        (q) => q.id === resolvedQuadrant,
-                      ) || {
-                        title: "Belum diprioritaskan",
-                        color: "text-slate-400",
-                        bg: "bg-slate-50",
-                        border: "border-slate-200",
-                      };
-
-                      return (
-                        <div
-                          key={block.id}
-                          className={`flex items-stretch gap-4 p-4 rounded-2xl border ${quad.bg} ${quad.border} transition-all hover:scale-[1.01]`}
-                        >
-                          <div className="flex flex-col items-center justify-center pr-4 border-r border-slate-200/50 min-w-[80px]">
-                            <span className="text-lg font-black text-slate-700">
-                              {block.time}
-                            </span>
-                          </div>
-                          <div className="flex-1 flex flex-col justify-center">
-                            <h4 className="font-bold text-slate-800">
-                              {block.title}
-                            </h4>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span
-                                className={`text-[10px] font-bold uppercase tracking-wider ${quad.color}`}
-                              >
-                                {quad.title}
-                              </span>
-                              <span className="text-slate-300">•</span>
-                              <span className="text-[10px] font-bold text-indigo-500 flex items-center gap-0.5">
-                                <Target className="w-3 h-3" /> {block.energy}{" "}
-                                Koin
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => removeBlock(dateStrKey, block.id)}
-                            className="text-slate-400 hover:text-rose-500 self-center p-2 rounded-xl hover:bg-white/50 transition-colors"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* Right side: Unmapped Agendas */}
-              <div className="w-full md:w-80 shrink-0 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-                <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                  <Inbox className="w-5 h-5 text-indigo-500" />
-                  Belum Diprioritaskan
-                </h3>
-
-                <Droppable droppableId="unassigned">
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`space-y-3 custom-scrollbar overflow-y-auto min-h-[100px] max-h-[500px] pr-1 transition-colors ${snapshot.isDraggingOver ? "bg-indigo-50/50 rounded-xl" : ""}`}
-                    >
-                      {tasks
-                        .filter(
-                          (t) => !t.completed && t.quadrant === "unassigned",
-                        )
-                        .map((task, index) => (
-                          <Draggable
-                            key={task.id}
-                            draggableId={task.id}
-                            index={index}
-                          >
+                {/* Right Panel: Unassigned Drop Zone */}
+                <div className="w-full md:w-72 shrink-0 bg-white/60 border-t md:border-t-0 md:border-l border-slate-200/60 p-5">
+                  <h3 className="font-bold text-slate-600 mb-4 flex items-center gap-2 text-sm">
+                    <Inbox className="w-4 h-4 text-indigo-400" /> Belum Diprioritaskan
+                  </h3>
+                  <Droppable droppableId="unassigned">
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-2 overflow-y-auto min-h-[120px] max-h-[420px] pr-1 transition-colors rounded-xl p-2 ${snapshot.isDraggingOver ? "bg-indigo-50 border border-indigo-200 border-dashed" : ""}`}
+                      >
+                        {tasks.filter((t) => !t.completed && t.quadrant === "unassigned").map((task, index) => (
+                          <Draggable key={task.id} draggableId={task.id} index={index}>
                             {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`bg-white p-3 rounded-xl border shadow-sm flex flex-col items-start gap-2 cursor-grab active:cursor-grabbing transition-all ${snapshot.isDragging ? "border-indigo-400 shadow-xl scale-105" : "border-slate-100"}`}
+                                className={`bg-white p-3 rounded-xl border shadow-sm flex items-start gap-2 cursor-grab active:cursor-grabbing transition-all ${snapshot.isDragging ? "border-indigo-400 shadow-xl scale-105 ring-2 ring-indigo-300" : "border-slate-100 hover:border-indigo-200"}`}
                               >
-                                <div className="flex w-full items-start gap-2">
-                                  <GripVertical className="w-4 h-4 text-slate-300 mt-0.5 shrink-0" />
-                                  <div className="flex-1">
-                                    <p className="text-sm font-semibold text-slate-700 line-clamp-2">
-                                      {task.title}
-                                    </p>
-                                    <span className="text-[10px] font-bold text-slate-400 mt-1 block">
-                                      Seret ke Matrix di Bawah
-                                    </span>
-                                  </div>
+                                <GripVertical className="w-4 h-4 text-slate-300 mt-0.5 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-700 line-clamp-2">{task.title}</p>
+                                  <span className="text-[10px] font-bold text-slate-400 mt-0.5 block">Seret ke Matrix ↓</span>
                                 </div>
                               </div>
                             )}
                           </Draggable>
                         ))}
-                      {provided.placeholder}
-
-                      {tasks.filter(
-                        (t) => !t.completed && t.quadrant === "unassigned",
-                      ).length === 0 &&
-                        !snapshot.isDraggingOver && (
-                          <div className="text-xs text-slate-500 text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
-                            Semua agenda sudah dipetakan!
+                        {provided.placeholder}
+                        {tasks.filter((t) => !t.completed && t.quadrant === "unassigned").length === 0 && !snapshot.isDraggingOver && (
+                          <div className="text-xs text-slate-400 text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
+                            Semua agenda sudah dipetakan! ✅
                           </div>
                         )}
-                    </div>
-                  )}
-                </Droppable>
-              </div>
-            </div>
-          </div>
-
-          {/* --- 3. VIEW: BALANCE MATRIX --- */}
-          <div className="liquid-glass p-6 lg:p-8 rounded-3xl spatial-shadow animate-fade-in-up mt-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800">
-                  Eisenhower Priority Board
-                </h2>
-                <p className="text-slate-500 text-sm mt-1">
-                  Seret dan petakan prioritas agenda serta tugasmu di sini.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {quadrants.map((quad) => (
-                <Droppable droppableId={quad.id} key={quad.id}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`p-4 rounded-3xl border-2 transition-colors min-h-[250px] ${quad.bg} ${snapshot.isDraggingOver ? "border-indigo-400 border-dashed bg-indigo-50/50" : quad.border}`}
-                    >
-                      <div className="flex items-center gap-2 mb-4">
-                        <quad.icon className={`w-5 h-5 ${quad.color}`} />
-                        <h3 className={`font-bold ${quad.color}`}>
-                          {quad.title}
-                        </h3>
-                        <span className="ml-auto bg-white/60 px-2 py-0.5 rounded-md text-xs font-bold text-slate-500">
-                          {tasks.filter((t) => t.quadrant === quad.id).length}
-                        </span>
                       </div>
+                    )}
+                  </Droppable>
+                </div>
+              </div>
+            </div>
 
-                      <div className="space-y-3">
-                        {tasks
-                          .filter((t) => t.quadrant === quad.id)
-                          .map((task, index) => (
-                            <Draggable
-                              key={task.id}
-                              draggableId={task.id}
-                              index={index}
-                            >
+            {/* ===== SECTION 3: EISENHOWER MATRIX ===== */}
+            <div className="liquid-glass p-6 lg:p-8 rounded-3xl spatial-shadow">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-3">
+                <div>
+                  <h2 className="text-xl font-black text-slate-800 flex items-center gap-3">
+                    <span className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
+                      <Target className="w-5 h-5 text-indigo-600" />
+                    </span>
+                    Eisenhower Priority Matrix
+                  </h2>
+                  <p className="text-slate-500 text-sm mt-1.5 ml-12">Seret dan petakan prioritas agendamu di 4 kuadran ini.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {quadrants.map((quad) => (
+                  <Droppable droppableId={quad.id} key={quad.id}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`p-4 rounded-2xl border-2 transition-all min-h-[200px] ${quad.bg} ${snapshot.isDraggingOver ? "border-indigo-400 border-dashed bg-indigo-50/60 scale-[1.01]" : quad.border}`}
+                      >
+                        <div className="flex items-center gap-2 mb-4">
+                          <quad.icon className={`w-5 h-5 ${quad.color}`} />
+                          <h3 className={`font-black text-sm ${quad.color}`}>{quad.title}</h3>
+                          <span className="ml-auto bg-white/70 px-2 py-0.5 rounded-md text-xs font-bold text-slate-500 shadow-sm">
+                            {tasks.filter((t) => t.quadrant === quad.id).length}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {tasks.filter((t) => t.quadrant === quad.id).map((task, index) => (
+                            <Draggable key={task.id} draggableId={task.id} index={index}>
                               {(provided, snapshot) => (
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`group bg-white/80 backdrop-blur-sm p-3 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-3 transition-all ${snapshot.isDragging ? "shadow-xl scale-105 ring-2 ring-indigo-500" : "hover:shadow-md hover:-translate-y-0.5"}`}
+                                  className={`group bg-white/85 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-slate-100/80 flex items-start gap-2 transition-all ${snapshot.isDragging ? "shadow-xl scale-105 ring-2 ring-indigo-400" : "hover:shadow-md hover:-translate-y-0.5"}`}
                                 >
-                                  <div
-                                    {...provided.dragHandleProps}
-                                    className="mt-1 text-slate-300 hover:text-slate-500"
-                                  >
+                                  <div {...provided.dragHandleProps} className="mt-0.5 text-slate-300 hover:text-slate-500 shrink-0">
                                     <GripVertical className="w-4 h-4" />
                                   </div>
-                                  <div className="flex-1">
-                                    <p
-                                      className={`text-sm font-semibold transition-all ${task.completed ? "line-through text-slate-400" : "text-slate-700"}`}
-                                    >
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-sm font-semibold leading-tight ${task.completed ? "line-through text-slate-400" : "text-slate-700"}`}>
                                       {task.title}
                                     </p>
-                                    <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                       <button
                                         onClick={() => openScheduleModal(task)}
-                                        className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md hover:bg-indigo-100 flex items-center gap-1 transition-colors"
+                                        className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md hover:bg-indigo-100 flex items-center gap-1 transition-colors"
                                       >
-                                        <CalendarIcon className="w-3 h-3" />{" "}
-                                        Jadwalkan
+                                        <CalendarIcon className="w-3 h-3" /> Jadwalkan
                                       </button>
                                       {task.tag === "Dari Catatan" && (
-                                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md flex items-center gap-1">
-                                          <Sparkles className="w-3 h-3" />{" "}
-                                          Catatan
+                                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                          <Sparkles className="w-3 h-3" /> Catatan
                                         </span>
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                                     <button
                                       onClick={() => toggleTaskStatus(task.id)}
-                                      className={`p-1.5 rounded-lg transition-colors ${task.completed ? "text-emerald-500 bg-emerald-50" : "text-slate-400 hover:text-emerald-500 hover:bg-emerald-50"}`}
+                                      className={`p-1.5 rounded-lg transition-colors ${task.completed ? "text-emerald-500 bg-emerald-50" : "text-slate-300 hover:text-emerald-500 hover:bg-emerald-50"}`}
                                     >
                                       <CheckCircle className="w-4 h-4" />
                                     </button>
                                     <button
                                       onClick={() => deleteTask(task.id)}
-                                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                                      className="p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors"
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
@@ -991,222 +865,230 @@ const TimeManager = () => {
                               )}
                             </Draggable>
                           ))}
-                        {provided.placeholder}
+                          {provided.placeholder}
 
-                        {tasks.filter((t) => t.quadrant === quad.id).length ===
-                          0 &&
-                          !snapshot.isDraggingOver && (
-                            <div className="text-center py-6 border-2 border-dashed border-slate-200/50 rounded-2xl text-slate-400 text-xs font-medium">
+                          {tasks.filter((t) => t.quadrant === quad.id).length === 0 && !snapshot.isDraggingOver && (
+                            <div className="text-center py-6 border-2 border-dashed border-slate-200/60 rounded-xl text-slate-400 text-xs font-medium">
                               Seret tugas ke sini
                             </div>
                           )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </Droppable>
-              ))}
+                    )}
+                  </Droppable>
+                ))}
+              </div>
             </div>
-          </div>
-        </DragDropContext>
+
+          </DragDropContext>
+        </div>
       </div>
 
-      {/* ADD TASK MODAL */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in px-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
-            <h3 className="text-xl font-bold text-slate-800 mb-4">
-              Buat Agenda Baru
-            </h3>
-            <form onSubmit={handleAddTask}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                    Nama Agenda / Tugas
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    placeholder="Contoh: Meeting dengan Klien"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1 flex items-center gap-2">
-                    <Target className="w-4 h-4 text-indigo-500" /> Kuras Energi
-                  </label>
-                  <p className="text-[10px] font-medium text-slate-400 mb-2">
-                    Berapa koin mental yang dibutuhkan untuk agenda ini?
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { val: "1", label: "Ringan", icon: "🟢", desc: "1 Koin" },
-                      { val: "2", label: "Sedang", icon: "🟡", desc: "2 Koin" },
-                      { val: "3", label: "Berat", icon: "🔴", desc: "3 Koin" },
-                    ].map((opt) => (
-                      <button
-                        key={opt.val}
-                        type="button"
-                        onClick={() => setNewTaskEnergy(opt.val)}
-                        className={`flex flex-col items-center p-3 rounded-xl border transition-all ${newTaskEnergy === opt.val
-                          ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200"
-                          : "border-slate-200 bg-white hover:bg-slate-50 text-slate-500"
-                          }`}
-                      >
-                        <span className="text-xl mb-1">{opt.icon}</span>
-                        <span
-                          className={`text-xs font-bold ${newTaskEnergy === opt.val ? "text-indigo-700" : "text-slate-600"}`}
-                        >
-                          {opt.label}
-                        </span>
-                        <span
-                          className={`text-[10px] ${newTaskEnergy === opt.val ? "text-indigo-500" : "text-slate-400"}`}
-                        >
-                          {opt.desc}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 mt-8">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-5 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md flex items-center gap-2"
-                >
-                  Lanjut Jadwalkan <MoveRight className="w-4 h-4" />
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* SCHEDULE MODAL */}
-      {showScheduleModal && taskToSchedule && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in px-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 animate-fade-in-up border border-indigo-50">
-            <h3 className="text-2xl font-black text-slate-800 mb-6">
-              Jadwalkan Tugas
-            </h3>
-
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6">
-              <p className="text-sm font-medium text-slate-600 line-clamp-2">
-                "{taskToSchedule.title}"
+  {/* ADD TASK MODAL */ }
+{
+  showAddModal && createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in px-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
+        <h3 className="text-xl font-bold text-slate-800 mb-4">
+          Buat Agenda Baru
+        </h3>
+        <form onSubmit={handleAddTask}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                Nama Agenda / Tugas
+              </label>
+              <input
+                type="text"
+                required
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="Contoh: Meeting dengan Klien"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1 flex items-center gap-2">
+                <Target className="w-4 h-4 text-indigo-500" /> Kuras Energi
+              </label>
+              <p className="text-[10px] font-medium text-slate-400 mb-2">
+                Berapa koin mental yang dibutuhkan untuk agenda ini?
               </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { val: "1", label: "Ringan", icon: "🟢", desc: "1 Koin" },
+                  { val: "2", label: "Sedang", icon: "🟡", desc: "2 Koin" },
+                  { val: "3", label: "Berat", icon: "🔴", desc: "3 Koin" },
+                ].map((opt) => (
+                  <button
+                    key={opt.val}
+                    type="button"
+                    onClick={() => setNewTaskEnergy(opt.val)}
+                    className={`flex flex - col items - center p - 3 rounded - xl border transition - all ${newTaskEnergy === opt.val
+                      ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200"
+                      : "border-slate-200 bg-white hover:bg-slate-50 text-slate-500"
+                      } `}
+                  >
+                    <span className="text-xl mb-1">{opt.icon}</span>
+                    <span
+                      className={`text - xs font - bold ${newTaskEnergy === opt.val ? "text-indigo-700" : "text-slate-600"} `}
+                    >
+                      {opt.label}
+                    </span>
+                    <span
+                      className={`text - [10px] ${newTaskEnergy === opt.val ? "text-indigo-500" : "text-slate-400"} `}
+                    >
+                      {opt.desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-
-            <form onSubmit={confirmSchedule}>
-              <div className="space-y-5 mb-8">
-                <div>
-                  <label className="block text-[11px] font-black tracking-widest text-slate-500 uppercase mb-2">
-                    PILIH TANGGAL
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      required
-                      value={scheduleDate}
-                      onChange={(e) => setScheduleDate(e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-200 text-indigo-900 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white text-lg font-bold transition-all shadow-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-black tracking-widest text-slate-500 uppercase mb-2">
-                    PUKUL BERAPA?
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="time"
-                      required
-                      value={scheduleTime}
-                      onChange={(e) => setScheduleTime(e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-200 text-indigo-900 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white text-lg font-bold transition-all shadow-sm"
-                      style={{ colorScheme: "light" }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowScheduleModal(false)}
-                  className="px-6 py-3 rounded-2xl font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-3 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-transform hover:scale-105"
-                >
-                  <CheckCircle className="w-5 h-5" /> Masukkan Kalender
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
-
-      {/* Notification Toast */}
-      {notif && (
-        <div className="fixed bottom-6 right-6 bg-slate-800 text-white px-6 py-3 rounded-2xl shadow-2xl animate-fade-in-up z-[200] flex items-center gap-3 font-bold">
-          <CheckCircle className="w-5 h-5 text-emerald-400" />
-          {notif}
-        </div>
-      )}
-      {/* Reminder Notification Modal */}
-      {activeAlert && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-left">
-          <div className="bg-white max-w-md w-full rounded-[2rem] p-8 shadow-2xl border-4 border-orange-100 flex flex-col items-center text-center">
-            <div className="w-20 h-20 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mb-6">
-              <BellRing className="w-10 h-10 animate-pulse" />
-            </div>
-            <h2 className="text-2xl font-black text-slate-800 mb-2">
-              Peringatan Deadline!
-            </h2>
-            <p className="text-slate-500 mb-6">
-              Tugas{" "}
-              <strong className="text-slate-800">{activeAlert.text}</strong>{" "}
-              harus selesai dalam waktu kurang dari 2 Jam!
-            </p>
-
-            <div className="w-full bg-slate-50 p-4 rounded-xl border border-slate-100 mb-8 flex justify-between items-center text-left">
-              <div>
-                <p className="text-xs font-bold text-slate-400 uppercase">
-                  Tenggat Waktu
-                </p>
-                <p className="font-bold text-slate-800">
-                  {new Date(activeAlert.deadline).toLocaleString("id-ID", {
-                    timeStyle: "short",
-                    dateStyle: "medium",
-                  })}
-                </p>
-              </div>
-              <Clock className="w-8 h-8 text-slate-300" />
-            </div>
-
+          <div className="flex justify-end gap-3 mt-8">
             <button
-              onClick={() => setActiveAlert(null)}
-              className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-500/30 cursor-pointer hover:scale-105"
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="px-5 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100"
             >
-              Selesaikan Sekarang
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md flex items-center gap-2"
+            >
+              Lanjut Jadwalkan <MoveRight className="w-4 h-4" />
             </button>
           </div>
-        </div>
-      )}
+        </form>
+      </div>
     </div>
+    , document.body)
+}
+
+{/* SCHEDULE MODAL */ }
+{
+  showScheduleModal && taskToSchedule && createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in px-4">
+      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg p-8 animate-fade-in-up border border-indigo-50">
+        <h3 className="text-2xl font-black text-slate-800 mb-6">
+          Jadwalkan Tugas
+        </h3>
+
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6">
+          <p className="text-sm font-medium text-slate-600 line-clamp-2">
+            "{taskToSchedule.title}"
+          </p>
+        </div>
+
+        <form onSubmit={confirmSchedule}>
+          <div className="space-y-5 mb-8">
+            <div>
+              <label className="block text-[11px] font-black tracking-widest text-slate-500 uppercase mb-2">
+                PILIH TANGGAL
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  required
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="w-full bg-slate-50/50 border border-slate-200 text-indigo-900 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white text-lg font-bold transition-all shadow-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-black tracking-widest text-slate-500 uppercase mb-2">
+                PUKUL BERAPA?
+              </label>
+              <div className="relative">
+                <input
+                  type="time"
+                  required
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="w-full bg-slate-50/50 border border-slate-200 text-indigo-900 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white text-lg font-bold transition-all shadow-sm"
+                  style={{ colorScheme: "light" }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center mt-4">
+            <button
+              type="button"
+              onClick={() => setShowScheduleModal(false)}
+              className="px-6 py-3 rounded-2xl font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-3 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-transform hover:scale-105"
+            >
+              <CheckCircle className="w-5 h-5" /> Masukkan Kalender
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    , document.body)
+}
+
+{/* Notification Toast */ }
+{
+  notif && createPortal(
+    <div className="fixed bottom-6 right-6 bg-slate-800 text-white px-6 py-3 rounded-2xl shadow-2xl animate-fade-in-up z-[200] flex items-center gap-3 font-bold">
+      <CheckCircle className="w-5 h-5 text-emerald-400" />
+      {notif}
+    </div>
+    , document.body)
+}
+
+{/* Reminder Notification Modal */ }
+{
+  activeAlert && createPortal(
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-left">
+      <div className="bg-white max-w-md w-full rounded-[2rem] p-8 shadow-2xl border-4 border-orange-100 flex flex-col items-center text-center">
+        <div className="w-20 h-20 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mb-6">
+          <BellRing className="w-10 h-10 animate-pulse" />
+        </div>
+        <h2 className="text-2xl font-black text-slate-800 mb-2">
+          Peringatan Deadline!
+        </h2>
+        <p className="text-slate-500 mb-6">
+          Tugas <strong className="text-slate-800">{activeAlert.text}</strong> harus selesai dalam waktu kurang dari 2 Jam!
+        </p>
+
+        <div className="w-full bg-slate-50 p-4 rounded-xl border border-slate-100 mb-8 flex justify-between items-center text-left">
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase">
+              Tenggat Waktu
+            </p>
+            <p className="font-bold text-slate-800">
+              {new Date(activeAlert.deadline).toLocaleString("id-ID", {
+                timeStyle: "short",
+                dateStyle: "medium",
+              })}
+            </p>
+          </div>
+          <Clock className="w-8 h-8 text-slate-300" />
+        </div>
+
+        <button
+          onClick={() => setActiveAlert(null)}
+          className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-500/30 cursor-pointer hover:scale-105"
+        >
+          Selesaikan Nanti (Tutup)
+        </button>
+      </div>
+    </div>
+    , document.body)
+}
+    </>
   );
 };
 

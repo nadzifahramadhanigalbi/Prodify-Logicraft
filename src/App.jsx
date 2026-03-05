@@ -168,9 +168,9 @@ function App() {
       </aside>
 
       {/* ========== MAIN CONTENT ========== */}
-      <main className="flex-1 flex flex-col h-[100dvh] overflow-hidden relative lg:ml-[280px]">
+      <main className="flex-1 flex flex-col h-[100dvh] lg:ml-[280px] min-w-0">
         {/* Topbar */}
-        <header className="flex items-center justify-between w-full h-[76px] shrink-0 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl px-6 lg:px-10 z-30 sticky top-0 shadow-md shadow-slate-300/40">
+        <header className="flex items-center justify-between w-full h-[76px] shrink-0 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl px-6 lg:px-10 z-[40] sticky top-0 shadow-md shadow-slate-300/40">
           <div className="flex items-center gap-4">
             <button onClick={() => setIsSidebarOpen(true)} aria-label="Buka Menu Navigasi" className="lg:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-xl active:scale-95 transition-transform focus:ring-2 focus:ring-indigo-500">
               <Menu className="w-6 h-6" />
@@ -202,10 +202,10 @@ function App() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeMenu}
-              initial={{ opacity: 0, y: 15, filter: 'blur(5px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -15, filter: 'blur(5px)' }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="max-w-7xl mx-auto w-full min-h-full"
             >
               {renderContent()}

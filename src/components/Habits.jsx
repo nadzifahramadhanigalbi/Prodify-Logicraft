@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Sparkles,
   Plus,
@@ -680,292 +681,296 @@ const Habits = () => {
   };
 
   return (
-    <div className="min-h-full flex flex-col p-4 md:p-8 animate-fade-in pb-32">
-      <div className="max-w-6xl mx-auto w-full space-y-8">
-        {/* Header Wrapped in Card */}
-        <div className="animated-gradient-border liquid-glass p-6 md:p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 spatial-shadow">
-          <div className="flex items-center gap-5 text-center md:text-left z-10 relative">
-            <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center border-2 border-indigo-200 shadow-inner">
-              <Sun className="w-7 h-7 text-indigo-600" />
+    <>
+      <div className="min-h-full flex flex-col p-4 md:p-8 animate-fade-in pb-32">
+        <div className="max-w-6xl mx-auto w-full space-y-8">
+          {/* Header Wrapped in Card */}
+          <div className="animated-gradient-border liquid-glass p-6 md:p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 spatial-shadow">
+            <div className="flex items-center gap-5 text-center md:text-left z-10 relative">
+              <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center border-2 border-indigo-200 shadow-inner">
+                <Sun className="w-7 h-7 text-indigo-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
+                  Habit Tracker
+                </h1>
+                <p className="text-slate-500 font-medium text-sm mt-1">
+                  Bangun kebiasaan baik setiap harinya.
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
-                Habit Tracker
-              </h1>
-              <p className="text-slate-500 font-medium text-sm mt-1">
-                Bangun kebiasaan baik setiap harinya.
-              </p>
-            </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-6 py-3 md:py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md w-full md:w-auto justify-center"
+            >
+              <Plus className="w-5 h-5" /> Habit Baru
+            </button>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-6 py-3 md:py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md w-full md:w-auto justify-center"
-          >
-            <Plus className="w-5 h-5" /> Habit Baru
-          </button>
-        </div>
 
-        {/* Main Content Split: Settings Left vs Calendar Sidebar Right */}
-        <div className="flex flex-col xl:flex-row gap-8">
-          {/* Left Column: Habits List & Recommendations */}
-          <div className="w-full xl:w-2/3 flex flex-col gap-8">
-            {/* Unified Routine List Container */}
-            <div className="liquid-glass border border-orange-100/50 rounded-3xl p-6 spatial-shadow relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-200/20 rounded-full -mr-10 -mt-10 blur-2xl pointer-events-none"></div>
+          {/* Main Content Split: Settings Left vs Calendar Sidebar Right */}
+          <div className="flex flex-col xl:flex-row gap-8">
+            {/* Left Column: Habits List & Recommendations */}
+            <div className="w-full xl:w-2/3 flex flex-col gap-8">
+              {/* Unified Routine List Container */}
+              <div className="liquid-glass border border-orange-100/50 rounded-3xl p-6 spatial-shadow relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-200/20 rounded-full -mr-10 -mt-10 blur-2xl pointer-events-none"></div>
 
-              <div className="flex items-center justify-between mb-6 relative z-10">
-                <h3 className="font-bold text-lg flex items-center gap-2 text-orange-700">
-                  <Sun className="w-5 h-5" /> Rutinitas Harian
-                </h3>
-                <span className="text-xs font-bold bg-white text-orange-600 px-3 py-1 rounded-full shadow-sm border border-orange-100">
-                  Total: {habits.length}
-                </span>
+                <div className="flex items-center justify-between mb-6 relative z-10">
+                  <h3 className="font-bold text-lg flex items-center gap-2 text-orange-700">
+                    <Sun className="w-5 h-5" /> Rutinitas Harian
+                  </h3>
+                  <span className="text-xs font-bold bg-white text-orange-600 px-3 py-1 rounded-full shadow-sm border border-orange-100">
+                    Total: {habits.length}
+                  </span>
+                </div>
+
+                {habits.length === 0 ? (
+                  <div className="text-center py-8 px-4 flex flex-col items-center gap-4">
+                    {/* Student journaling SVG illustration */}
+                    <div className="animate-float" style={{ animationDuration: '4s' }}>
+                      <svg viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-44 h-auto mx-auto">
+                        {/* Notebook/Journal */}
+                        <rect x="40" y="40" width="110" height="130" rx="10" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="2" />
+                        <rect x="40" y="40" width="18" height="130" rx="10" fill="#F59E0B" opacity="0.8" />
+                        {/* Spiral binding */}
+                        {[60, 80, 100, 120, 140].map(y => (
+                          <circle key={y} cx="49" cy={y} r="4" fill="white" stroke="#D97706" strokeWidth="1.5" />
+                        ))}
+                        {/* Lines on journal */}
+                        <line x1="68" y1="70" x2="138" y2="70" stroke="#FCD34D" strokeWidth="2" strokeLinecap="round" />
+                        <line x1="68" y1="85" x2="138" y2="85" stroke="#FCD34D" strokeWidth="2" strokeLinecap="round" />
+                        <line x1="68" y1="100" x2="118" y2="100" stroke="#FCD34D" strokeWidth="2" strokeLinecap="round" />
+                        <line x1="68" y1="115" x2="128" y2="115" stroke="#FCD34D" strokeWidth="2" strokeLinecap="round" />
+                        {/* Checkmarks — drawn habits */}
+                        <path d="M68 71 L72 75 L80 65" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M68 86 L72 90 L80 80" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        {/* Small star decoration on journal */}
+                        <path d="M130 55 L131.5 60 L136 61.5 L131.5 63 L130 68 L128.5 63 L124 61.5 L128.5 60 Z" fill="#F59E0B" />
+                        {/* Student boy */}
+                        {/* Head */}
+                        <circle cx="155" cy="80" r="20" fill="#FBBF24" />
+                        <path d="M137 72 Q142 56 155 60 Q168 56 173 72" fill="#1E293B" />
+                        {/* Eyes */}
+                        <circle cx="149" cy="80" r="4" fill="white" />
+                        <circle cx="161" cy="80" r="4" fill="white" />
+                        <circle cx="149.5" cy="80.5" r="2" fill="#1E293B" />
+                        <circle cx="161.5" cy="80.5" r="2" fill="#1E293B" />
+                        <circle cx="150" cy="79.5" r="0.7" fill="white" />
+                        <circle cx="162" cy="79.5" r="0.7" fill="white" />
+                        {/* Smile */}
+                        <path d="M149 88 Q155 94 161 88" stroke="#92400E" strokeWidth="2" fill="none" strokeLinecap="round" />
+                        {/* Body */}
+                        <rect x="138" y="98" width="34" height="45" rx="12" fill="#4F46E5" />
+                        {/* Arm holding pen */}
+                        <path d="M138 115 Q110 125 95 135" stroke="#FBBF24" strokeWidth="10" strokeLinecap="round" />
+                        {/* Pen */}
+                        <rect x="78" y="128" width="28" height="7" rx="3" fill="#EF4444" transform="rotate(-35 78 128)" />
+                        <polygon points="70,148 73,140 79,145" fill="#1E293B" transform="rotate(-35 70 148)" />
+                        {/* Decorative sparkles */}
+                        <path d="M20 50 L21 54 L25 55 L21 56 L20 60 L19 56 L15 55 L19 54 Z" fill="#A78BFA" opacity="0.8" />
+                        <path d="M175 130 L176 133 L179 134 L176 135 L175 138 L174 135 L171 134 L174 133 Z" fill="#F472B6" opacity="0.8" />
+                        <circle cx="25" cy="130" r="3" fill="#4F46E5" opacity="0.3" />
+                        <circle cx="180" cy="60" r="4" fill="#FCD34D" opacity="0.5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-black text-slate-800 text-lg mb-1">Mulai Kebiasaan Pertamamu! 🌟</h3>
+                      <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
+                        Belum ada rutinitas harianmu. Tambahkan habit baru atau pilih dari daftar paket rutinitas di bawah.
+                      </p>
+                    </div>
+                    <button onClick={() => setShowAddModal(true)}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold btn-magnetic spatial-hover shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)] z-10 group relative">
+                      <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Plus className="w-4 h-4 relative z-10" /> <span className="relative z-10">Tambah Habit Pertama</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4 relative z-10">
+                    {habits.map(renderHabitItem)}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Calendar & Stats Sidebar */}
+            <div className="w-full xl:w-1/3 flex flex-col gap-6 items-center xl:items-end">
+              {/* Tear-off Calendar Widget (Scaled Down) */}
+              <div className="relative z-10 w-full flex flex-col items-center xl:items-end animate-fade-in">
+                <div className="bg-white rounded-[32px] shadow-[0_15px_40px_rgba(0,0,0,0.1)] overflow-hidden w-full max-w-[260px] aspect-[4/5] flex flex-col relative transform transition-transform hover:scale-105 duration-500">
+                  {/* Calendar Binder Rings */}
+                  <div className="absolute top-3 left-1/4 w-2.5 h-6 bg-zinc-800 rounded-full shadow-inner z-20"></div>
+                  <div className="absolute top-3 right-1/4 w-2.5 h-6 bg-zinc-800 rounded-full shadow-inner z-20"></div>
+
+                  {/* Red Header (Month/Year) */}
+                  <div className="bg-red-600 pt-8 pb-4 px-5 flex flex-col items-center justify-center relative border-b-[3px] border-red-700">
+                    <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/10 to-transparent pointer-events-none"></div>
+                    <div className="w-full flex justify-between items-center z-10">
+                      <h2 className="text-xl font-black text-white tracking-widest uppercase shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
+                        {new Date(activeDate).toLocaleDateString("id-ID", {
+                          month: "long",
+                        })}
+                      </h2>
+                    </div>
+                    <div className="w-full flex justify-between mt-1.5 z-10">
+                      <span className="text-red-100 font-black text-xs">
+                        {new Date(activeDate).getFullYear()}
+                      </span>
+                      <span className="text-white font-bold text-xs uppercase tracking-wider">
+                        {new Date(activeDate).toLocaleDateString("en-US", {
+                          weekday: "long",
+                        })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Date Body */}
+                  <div className="bg-[#f8f9fa] flex-1 flex flex-col items-center justify-center relative inner-shadow-sm">
+                    {/* Faint Grid Texture */}
+                    <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none"></div>
+
+                    <h1 className="text-[80px] leading-none font-black text-zinc-900 tracking-tighter drop-shadow-md">
+                      {new Date(activeDate).getDate()}
+                    </h1>
+                  </div>
+
+                  {/* Calendar Controls */}
+                  <div className="absolute bottom-0 w-full bg-white/50 backdrop-blur-md p-3 flex justify-between items-center border-t border-slate-200">
+                    <button
+                      onClick={() => handleDateChange(-1)}
+                      className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-full shadow-md transition-all active:scale-95"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {activeDate === formatDateStr(new Date())
+                        ? "Hari Ini"
+                        : "Riwayat"}
+                    </span>
+                    <button
+                      onClick={() => handleDateChange(1)}
+                      className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-full shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={activeDate === formatDateStr(new Date())}
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {habits.length === 0 ? (
-                <div className="text-center py-8 px-4 flex flex-col items-center gap-4">
-                  {/* Student journaling SVG illustration */}
-                  <div className="animate-float" style={{ animationDuration: '4s' }}>
-                    <svg viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-44 h-auto mx-auto">
-                      {/* Notebook/Journal */}
-                      <rect x="40" y="40" width="110" height="130" rx="10" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="2" />
-                      <rect x="40" y="40" width="18" height="130" rx="10" fill="#F59E0B" opacity="0.8" />
-                      {/* Spiral binding */}
-                      {[60, 80, 100, 120, 140].map(y => (
-                        <circle key={y} cx="49" cy={y} r="4" fill="white" stroke="#D97706" strokeWidth="1.5" />
-                      ))}
-                      {/* Lines on journal */}
-                      <line x1="68" y1="70" x2="138" y2="70" stroke="#FCD34D" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="68" y1="85" x2="138" y2="85" stroke="#FCD34D" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="68" y1="100" x2="118" y2="100" stroke="#FCD34D" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="68" y1="115" x2="128" y2="115" stroke="#FCD34D" strokeWidth="2" strokeLinecap="round" />
-                      {/* Checkmarks — drawn habits */}
-                      <path d="M68 71 L72 75 L80 65" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M68 86 L72 90 L80 80" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      {/* Small star decoration on journal */}
-                      <path d="M130 55 L131.5 60 L136 61.5 L131.5 63 L130 68 L128.5 63 L124 61.5 L128.5 60 Z" fill="#F59E0B" />
-                      {/* Student boy */}
-                      {/* Head */}
-                      <circle cx="155" cy="80" r="20" fill="#FBBF24" />
-                      <path d="M137 72 Q142 56 155 60 Q168 56 173 72" fill="#1E293B" />
-                      {/* Eyes */}
-                      <circle cx="149" cy="80" r="4" fill="white" />
-                      <circle cx="161" cy="80" r="4" fill="white" />
-                      <circle cx="149.5" cy="80.5" r="2" fill="#1E293B" />
-                      <circle cx="161.5" cy="80.5" r="2" fill="#1E293B" />
-                      <circle cx="150" cy="79.5" r="0.7" fill="white" />
-                      <circle cx="162" cy="79.5" r="0.7" fill="white" />
-                      {/* Smile */}
-                      <path d="M149 88 Q155 94 161 88" stroke="#92400E" strokeWidth="2" fill="none" strokeLinecap="round" />
-                      {/* Body */}
-                      <rect x="138" y="98" width="34" height="45" rx="12" fill="#4F46E5" />
-                      {/* Arm holding pen */}
-                      <path d="M138 115 Q110 125 95 135" stroke="#FBBF24" strokeWidth="10" strokeLinecap="round" />
-                      {/* Pen */}
-                      <rect x="78" y="128" width="28" height="7" rx="3" fill="#EF4444" transform="rotate(-35 78 128)" />
-                      <polygon points="70,148 73,140 79,145" fill="#1E293B" transform="rotate(-35 70 148)" />
-                      {/* Decorative sparkles */}
-                      <path d="M20 50 L21 54 L25 55 L21 56 L20 60 L19 56 L15 55 L19 54 Z" fill="#A78BFA" opacity="0.8" />
-                      <path d="M175 130 L176 133 L179 134 L176 135 L175 138 L174 135 L171 134 L174 133 Z" fill="#F472B6" opacity="0.8" />
-                      <circle cx="25" cy="130" r="3" fill="#4F46E5" opacity="0.3" />
-                      <circle cx="180" cy="60" r="4" fill="#FCD34D" opacity="0.5" />
-                    </svg>
+              {/* Synergy Status Insights (Sidebar format instead of floating) */}
+              <div className="bg-white border border-slate-200 p-5 rounded-3xl flex flex-col gap-4 shadow-sm w-full max-w-[260px]">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-2 rounded-xl border ${balanceState === "buffed" ? "bg-emerald-50 text-emerald-500 border-emerald-100" : balanceState === "debuffed" ? "bg-rose-50 text-rose-500 border-rose-100" : "bg-blue-50 text-blue-500 border-blue-100"}`}
+                  >
+                    <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-black text-slate-800 text-lg mb-1">Mulai Kebiasaan Pertamamu! 🌟</h3>
-                    <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
-                      Belum ada rutinitas harianmu. Tambahkan habit baru atau pilih dari daftar paket rutinitas di bawah.
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">
+                      Status Keselarasan
+                    </p>
+                    <p
+                      className={`font-black text-sm flex items-center gap-1 ${balanceState === "buffed" ? "text-emerald-600" : balanceState === "debuffed" ? "text-rose-600" : "text-slate-700"}`}
+                    >
+                      {balanceState === "buffed" && "ASCENDED STRIKE!"}
+                      {balanceState === "balanced" && "STABIL"}
+                      {balanceState === "debuffed" && "BURNOUT WARNING"}
                     </p>
                   </div>
-                  <button onClick={() => setShowAddModal(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold btn-magnetic spatial-hover shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)] z-10 group relative">
-                    <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Plus className="w-4 h-4 relative z-10" /> <span className="relative z-10">Tambah Habit Pertama</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4 relative z-10">
-                  {habits.map(renderHabitItem)}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column: Calendar & Stats Sidebar */}
-          <div className="w-full xl:w-1/3 flex flex-col gap-6 items-center xl:items-end">
-            {/* Tear-off Calendar Widget (Scaled Down) */}
-            <div className="relative z-10 w-full flex flex-col items-center xl:items-end animate-fade-in">
-              <div className="bg-white rounded-[32px] shadow-[0_15px_40px_rgba(0,0,0,0.1)] overflow-hidden w-full max-w-[260px] aspect-[4/5] flex flex-col relative transform transition-transform hover:scale-105 duration-500">
-                {/* Calendar Binder Rings */}
-                <div className="absolute top-3 left-1/4 w-2.5 h-6 bg-zinc-800 rounded-full shadow-inner z-20"></div>
-                <div className="absolute top-3 right-1/4 w-2.5 h-6 bg-zinc-800 rounded-full shadow-inner z-20"></div>
-
-                {/* Red Header (Month/Year) */}
-                <div className="bg-red-600 pt-8 pb-4 px-5 flex flex-col items-center justify-center relative border-b-[3px] border-red-700">
-                  <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/10 to-transparent pointer-events-none"></div>
-                  <div className="w-full flex justify-between items-center z-10">
-                    <h2 className="text-xl font-black text-white tracking-widest uppercase shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
-                      {new Date(activeDate).toLocaleDateString("id-ID", {
-                        month: "long",
-                      })}
-                    </h2>
-                  </div>
-                  <div className="w-full flex justify-between mt-1.5 z-10">
-                    <span className="text-red-100 font-black text-xs">
-                      {new Date(activeDate).getFullYear()}
-                    </span>
-                    <span className="text-white font-bold text-xs uppercase tracking-wider">
-                      {new Date(activeDate).toLocaleDateString("en-US", {
-                        weekday: "long",
-                      })}
-                    </span>
-                  </div>
                 </div>
 
-                {/* Date Body */}
-                <div className="bg-[#f8f9fa] flex-1 flex flex-col items-center justify-center relative inner-shadow-sm">
-                  {/* Faint Grid Texture */}
-                  <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none"></div>
-
-                  <h1 className="text-[80px] leading-none font-black text-zinc-900 tracking-tighter drop-shadow-md">
-                    {new Date(activeDate).getDate()}
-                  </h1>
-                </div>
-
-                {/* Calendar Controls */}
-                <div className="absolute bottom-0 w-full bg-white/50 backdrop-blur-md p-3 flex justify-between items-center border-t border-slate-200">
-                  <button
-                    onClick={() => handleDateChange(-1)}
-                    className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-full shadow-md transition-all active:scale-95"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    {activeDate === formatDateStr(new Date())
-                      ? "Hari Ini"
-                      : "Riwayat"}
-                  </span>
-                  <button
-                    onClick={() => handleDateChange(1)}
-                    className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-full shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={activeDate === formatDateStr(new Date())}
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Synergy Status Insights (Sidebar format instead of floating) */}
-            <div className="bg-white border border-slate-200 p-5 rounded-3xl flex flex-col gap-4 shadow-sm w-full max-w-[260px]">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`p-2 rounded-xl border ${balanceState === "buffed" ? "bg-emerald-50 text-emerald-500 border-emerald-100" : balanceState === "debuffed" ? "bg-rose-50 text-rose-500 border-rose-100" : "bg-blue-50 text-blue-500 border-blue-100"}`}
-                >
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">
-                    Status Keselarasan
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
+                    Efek Besok <Info className="w-3 h-3" />
                   </p>
-                  <p
-                    className={`font-black text-sm flex items-center gap-1 ${balanceState === "buffed" ? "text-emerald-600" : balanceState === "debuffed" ? "text-rose-600" : "text-slate-700"}`}
-                  >
-                    {balanceState === "buffed" && "ASCENDED STRIKE!"}
-                    {balanceState === "balanced" && "STABIL"}
-                    {balanceState === "debuffed" && "BURNOUT WARNING"}
-                  </p>
+                  {balanceState === "buffed" && (
+                    <p className="font-bold text-xs text-emerald-600">
+                      +3 Extra Koin Energi
+                    </p>
+                  )}
+                  {balanceState === "balanced" && (
+                    <p className="font-bold text-xs text-slate-500">
+                      Batas Normal (10 Koin)
+                    </p>
+                  )}
+                  {balanceState === "debuffed" && (
+                    <p className="font-bold text-xs text-rose-600">
+                      -3 Penalti Energi
+                    </p>
+                  )}
                 </div>
-              </div>
-
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                  Efek Besok <Info className="w-3 h-3" />
-                </p>
-                {balanceState === "buffed" && (
-                  <p className="font-bold text-xs text-emerald-600">
-                    +3 Extra Koin Energi
-                  </p>
-                )}
-                {balanceState === "balanced" && (
-                  <p className="font-bold text-xs text-slate-500">
-                    Batas Normal (10 Koin)
-                  </p>
-                )}
-                {balanceState === "debuffed" && (
-                  <p className="font-bold text-xs text-rose-600">
-                    -3 Penalti Energi
-                  </p>
-                )}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Habit Recommendations - Full Width */}
-        <div className="mb-[200px]">
-          <h3 className="font-bold text-sm mb-4 text-slate-500 uppercase tracking-wider flex items-center gap-2">
-            <LayoutGrid className="w-4 h-4" /> Paket Rutinitas Populer
-          </h3>
-          <div className="flex overflow-x-auto gap-4 pb-4 snap-x">
-            {POPULAR_ROUTINES.map((routine) => {
-              const borderHoverColor =
-                routine.pillar === "cognitive"
-                  ? "hover:border-blue-300"
-                  : routine.pillar === "vitality"
-                    ? "hover:border-emerald-300"
-                    : "hover:border-amber-300";
+          {/* Habit Recommendations - Full Width */}
+          <div className="mb-[200px]">
+            <h3 className="font-bold text-sm mb-4 text-slate-500 uppercase tracking-wider flex items-center gap-2">
+              <LayoutGrid className="w-4 h-4" /> Paket Rutinitas Populer
+            </h3>
+            <div className="flex overflow-x-auto gap-4 pb-4 snap-x">
+              {POPULAR_ROUTINES.map((routine) => {
+                const borderHoverColor =
+                  routine.pillar === "cognitive"
+                    ? "hover:border-blue-300"
+                    : routine.pillar === "vitality"
+                      ? "hover:border-emerald-300"
+                      : "hover:border-amber-300";
 
-              const textPillarColor =
-                routine.pillar === "cognitive"
-                  ? "text-blue-500"
-                  : routine.pillar === "vitality"
-                    ? "text-emerald-500"
-                    : "text-amber-500";
+                const textPillarColor =
+                  routine.pillar === "cognitive"
+                    ? "text-blue-500"
+                    : routine.pillar === "vitality"
+                      ? "text-emerald-500"
+                      : "text-amber-500";
 
-              const labelPillarColor =
-                routine.pillar === "cognitive"
-                  ? "bg-blue-50 border-blue-100"
-                  : routine.pillar === "vitality"
-                    ? "bg-emerald-50 border-emerald-100"
-                    : "bg-amber-50 border-amber-100";
+                const labelPillarColor =
+                  routine.pillar === "cognitive"
+                    ? "bg-blue-50 border-blue-100"
+                    : routine.pillar === "vitality"
+                      ? "bg-emerald-50 border-emerald-100"
+                      : "bg-amber-50 border-amber-100";
 
-              return (
-                <div
-                  key={routine.id}
-                  className={`shrink-0 w-64 border border-slate-200/50 liquid-glass rounded-2xl p-5 snap-center spatial-hover transition-all ${borderHoverColor}`}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-xl shadow-inner">
-                      {routine.icon}
+                return (
+                  <div
+                    key={routine.id}
+                    className={`shrink-0 w-64 border border-slate-200/50 liquid-glass rounded-2xl p-5 snap-center spatial-hover transition-all ${borderHoverColor}`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-xl shadow-inner">
+                        {routine.icon}
+                      </div>
+                      <span
+                        className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${labelPillarColor} ${textPillarColor}`}
+                      >
+                        {routine.pillar} ({routine.target}x)
+                      </span>
                     </div>
-                    <span
-                      className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${labelPillarColor} ${textPillarColor}`}
+                    <h4 className="font-bold text-slate-800 text-sm mb-1 line-clamp-1">
+                      {routine.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 mb-4 h-8 line-clamp-2">
+                      {routine.desc}
+                    </p>
+                    <button
+                      onClick={() => handleApplyRoutine(routine)}
+                      className="w-full py-2 bg-slate-800 text-white text-xs font-bold rounded-xl btn-magnetic spatial-hover transition-colors shadow-[0_4px_10px_-2px_rgba(30,41,59,0.4)] flex items-center justify-center gap-2 relative group overflow-hidden"
                     >
-                      {routine.pillar} ({routine.target}x)
-                    </span>
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Plus className="w-3 h-3 relative z-10" /> <span className="relative z-10">Terapkan Habit</span>
+                    </button>
                   </div>
-                  <h4 className="font-bold text-slate-800 text-sm mb-1 line-clamp-1">
-                    {routine.title}
-                  </h4>
-                  <p className="text-xs text-slate-500 mb-4 h-8 line-clamp-2">
-                    {routine.desc}
-                  </p>
-                  <button
-                    onClick={() => handleApplyRoutine(routine)}
-                    className="w-full py-2 bg-slate-800 text-white text-xs font-bold rounded-xl btn-magnetic spatial-hover transition-colors shadow-[0_4px_10px_-2px_rgba(30,41,59,0.4)] flex items-center justify-center gap-2 relative group overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Plus className="w-3 h-3 relative z-10" /> <span className="relative z-10">Terapkan Habit</span>
-                  </button>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* Celebration Toast Modal */}
-        {showCelebration && (
+        </div>
+      </div>
+      {/* Celebration Toast Modal */}
+      {
+        showCelebration && createPortal(
           <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-white px-8 py-4 rounded-2xl shadow-[0_10px_40px_rgba(34,197,94,0.3)] border border-emerald-100 flex items-center gap-4 z-50 animate-bounce">
             <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
               <Check className="w-6 h-6 text-emerald-600" />
@@ -979,10 +984,11 @@ const Habits = () => {
               </p>
             </div>
           </div>
-        )}
+          , document.body)}
 
-        {/* Undo Habit Confirmation Modal */}
-        {confirmUndoId && (
+      {/* Undo Habit Confirmation Modal */}
+      {
+        confirmUndoId && createPortal(
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 animate-fade-in bg-slate-900/40 backdrop-blur-sm">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in-up border border-slate-200 text-center p-8">
               <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
@@ -1015,10 +1021,12 @@ const Habits = () => {
               </div>
             </div>
           </div>
-        )}
+        )
+      }
 
-        {/* Add Habit Modal */}
-        {showAddModal && (
+      {/* Add Habit Modal */}
+      {
+        showAddModal && createPortal(
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-fade-in px-4 pb-0 sm:pb-4">
             {/* Neko peeks from bottom with speech bubble */}
             <div className="hidden sm:flex absolute bottom-0 left-[calc(50%-240px)] translate-x-[-100%] items-end gap-3 pb-2">
@@ -1116,10 +1124,12 @@ const Habits = () => {
               </form>
             </div>
           </div>
-        )}
+        )
+      }
 
-        {/* Complete Habit Confirmation Modal */}
-        {confirmCompleteId && (
+      {/* Complete Habit Confirmation Modal */}
+      {
+        confirmCompleteId && createPortal(
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 animate-fade-in bg-slate-900/40 backdrop-blur-sm">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in-up border border-slate-200 text-center p-8">
               <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
@@ -1152,10 +1162,12 @@ const Habits = () => {
               </div>
             </div>
           </div>
-        )}
+        )
+      }
 
-        {/* Detail Stats & Notes Modal */}
-        {activeDetailHabit && (
+      {/* Detail Stats & Notes Modal */}
+      {
+        activeDetailHabit && createPortal(
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
@@ -1245,9 +1257,8 @@ const Habits = () => {
               </div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+          , document.body)}
+    </>
   );
 };
 

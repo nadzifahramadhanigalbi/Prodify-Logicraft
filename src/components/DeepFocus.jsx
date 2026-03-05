@@ -23,8 +23,15 @@ import {
 } from "lucide-react";
 import { NekoMascotFull } from "./NekoMascot";
 
+const DURATION_OPTIONS = [
+  { label: '25 min', seconds: 25 * 60, desc: 'Pomodoro Klasik' },
+  { label: '45 min', seconds: 45 * 60, desc: 'Fokus Mendalam' },
+  { label: '90 min', seconds: 90 * 60, desc: 'Ultradian Rhythm' },
+];
+
 const DeepFocus = () => {
-  const TOTAL_TIME = 25 * 60; // 25 minutes
+  const [selectedDuration, setSelectedDuration] = useState(0); // index of DURATION_OPTIONS
+  const TOTAL_TIME = DURATION_OPTIONS[selectedDuration].seconds;
   const [isRunning, setIsRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
   const fullscreenRef = useRef(null);
@@ -74,6 +81,10 @@ const DeepFocus = () => {
   const [treeState, setTreeState] = useState("idle"); // 'idle', 'growing', 'dead', 'success'
   const [showWarning, setShowWarning] = useState(false);
 
+  // Today's session counter
+  const todayKey = `forest_today_${new Date().toISOString().split('T')[0]}`;
+  const [todaySessions, setTodaySessions] = useState(() => parseInt(localStorage.getItem(`forest_today_${new Date().toISOString().split('T')[0]}`) || '0'));
+
   useEffect(() => {
     localStorage.setItem("forest_stats", JSON.stringify(stats));
   }, [stats]);
@@ -102,6 +113,9 @@ const DeepFocus = () => {
       setIsRunning(false);
       setTreeState("success");
       setStats((s) => ({ ...s, planted: s.planted + 1 }));
+      // Track today's sessions for Dashboard real-time display
+      const todayKey = `forest_today_${new Date().toISOString().split('T')[0]}`;
+      localStorage.setItem(todayKey, String((parseInt(localStorage.getItem(todayKey) || '0') + 1)));
       if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
       setTimeout(() => {
         setTimeLeft(TOTAL_TIME);
@@ -174,6 +188,7 @@ const DeepFocus = () => {
   }, [preCountdown]);
 
   const handleStart = () => {
+    setTimeLeft(DURATION_OPTIONS[selectedDuration].seconds);
     if (fullscreenRef.current) {
       fullscreenRef.current
         .requestFullscreen()
@@ -422,15 +437,41 @@ const DeepFocus = () => {
         {/* Controls */}
         <div className="flex flex-col gap-4 w-full justify-center items-center">
           {treeState === "idle" ? (
-            <button
-              onClick={handleStart}
-              className="w-full max-w-[280px] py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 cursor-pointer bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/30 shadow-xl hover:-translate-y-1"
-            >
-              <div className="p-1.5 bg-white/20 rounded-full">
-                <Play className="w-5 h-5 fill-current" />
+            <>
+              {/* Duration selector */}
+              <div className="flex gap-2 w-full max-w-[280px]">
+                {DURATION_OPTIONS.map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setSelectedDuration(i); setTimeLeft(opt.seconds); }}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${selectedDuration === i
+                        ? 'bg-white text-emerald-700 border-emerald-300 shadow-md'
+                        : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20'
+                      }`}
+                  >
+                    <div>{opt.label}</div>
+                    <div className={`text-[9px] font-medium ${selectedDuration === i ? 'text-emerald-500' : 'text-white/40'}`}>{opt.desc}</div>
+                  </button>
+                ))}
               </div>
-              <span>Masuk Zona Gimfikasi</span>
-            </button>
+              {/* Today streak badge */}
+              {todaySessions > 0 && (
+                <div className="flex items-center gap-2 bg-white/15 border border-white/20 rounded-2xl px-4 py-2">
+                  <span className="text-emerald-300 font-black text-lg">{todaySessions}</span>
+                  <span className="text-white/70 text-xs font-medium">sesi selesai hari ini</span>
+                  {todaySessions >= 3 && <span className="text-yellow-300 text-xs font-bold">🔥 Flow State!</span>}
+                </div>
+              )}
+              <button
+                onClick={handleStart}
+                className="w-full max-w-[280px] py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 cursor-pointer bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/30 shadow-xl hover:-translate-y-1"
+              >
+                <div className="p-1.5 bg-white/20 rounded-full">
+                  <Play className="w-5 h-5 fill-current" />
+                </div>
+                <span>Mulai Sesi Fokus</span>
+              </button>
+            </>
           ) : (
             <button
               onClick={handleGiveUpClick}
