@@ -73,11 +73,35 @@ const ZenNotes = () => {
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
+  // ==========================================
+  // SAFE STORAGE ENGINE (PENANGANAN ERROR MEMORI)
+  // ==========================================
+  const safeSaveToLocalStorage = (key, data) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+      setSaveStatus('Tersimpan Otomatis');
+      return true;
+    } catch (e) {
+      // Deteksi error jika memori LocalStorage penuh
+      if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+        setSaveStatus('Gagal: Memori Penuh!');
+        alert("🚨 MEMORI LOKAL BROWSER PENUH! 🚨\n\nKarena StuProd mengutamakan privasi (Local-First), penyimpanan browser Anda telah mencapai batas.\n\nSolusi:\n1. Ekspor catatan lama Anda ke PDF.\n2. Hapus halaman catatan lama untuk mengosongkan memori.");
+      } else {
+        console.error("Terjadi kesalahan sistem saat menyimpan:", e);
+      }
+      return false;
+    }
+  };
+
   // Autosave
   useEffect(() => {
     if (!autoSaveEnabled) return undefined;
+    
+    // Ubah status saat mulai menyimpan
+    setSaveStatus('Menyimpan...');
+    
     const timeout = setTimeout(() => {
-      localStorage.setItem('zen_pages_multi', JSON.stringify(pages));
+      safeSaveToLocalStorage('zen_pages_multi', pages);
     }, 800);
     return () => clearTimeout(timeout);
   }, [pages, autoSaveEnabled]);
@@ -183,7 +207,8 @@ const ZenNotes = () => {
     setIsDrawing(false);
 
     if (canvasRef.current) {
-      const dataUrl = canvasRef.current.toDataURL('image/png');
+      // KOMPRESI GAMBAR: Gunakan format WebP dengan kualitas 50% untuk menghemat memori
+      const dataUrl = canvasRef.current.toDataURL('image/webp', 0.5);
       updateActivePage('drawingData', dataUrl);
     }
   };
@@ -442,7 +467,7 @@ const ZenNotes = () => {
               <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-700/50 px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0 gap-4">
                 <input type="text" placeholder="Judul Catatan..." value={activePage?.title || ''} onChange={(e) => updateActivePage('title', e.target.value)} className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white border-none outline-none bg-transparent placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:text-indigo-900 dark:focus:text-indigo-300 w-full transition-colors" />
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-[10px] whitespace-nowrap font-bold px-3 py-1.5 rounded-full border transition-colors ${saveStatus === 'Menyimpan...' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20'}`}>
+                  <span className={`text-[10px] whitespace-nowrap font-bold px-3 py-1.5 rounded-full border transition-colors ${saveStatus === 'Menyimpan...' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20' : saveStatus.includes('Gagal') ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20'}`}>
                     {saveStatus}
                   </span>
 

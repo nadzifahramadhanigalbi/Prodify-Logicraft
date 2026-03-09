@@ -2,7 +2,13 @@ import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, BarChart2, BookOpen, CalendarDays, Focus, Bell, Search, Menu, X, ChevronRight, Settings as SettingsIcon, Star, ShieldCheck, Zap, CheckCircle2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+
+// IMPORT KOMPONEN LOGIN & LANDING PAGE (Statis)
 import Login from './components/Login';
+import LandingPage from './components/LandingPage';
+import CognitiveGuard from './components/CognitiveGuard';
+
+// LAZY LOADING KOMPONEN DASHBOARD DLL
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const ZenNotes = lazy(() => import('./components/ZenNotes'));
 const TimeManager = lazy(() => import('./components/TimeManager'));
@@ -10,10 +16,8 @@ const DeepFocus = lazy(() => import('./components/DeepFocus'));
 const Habits = lazy(() => import('./components/Habits'));
 const Profile = lazy(() => import('./components/Profile'));
 const Settings = lazy(() => import('./components/Settings'));
-import CognitiveGuard from './components/CognitiveGuard';
 
 const MotionDiv = motion.div;
-
 
 function App() {
   const [activeMenu, setActiveMenu] = useState('dashboard');
@@ -23,7 +27,9 @@ function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [isLowRest, setIsLowRest] = useState(false);
+  // STATE UNTUK MENGONTROL ROUTING LANDING PAGE VS LOGIN
+  const [showLanding, setShowLanding] = useState(true);
+
   const scrollContainerRef = useRef(null);
 
   useEffect(() => {
@@ -35,8 +41,6 @@ function App() {
   const [userLevel, setUserLevel] = useState(1);
   const [userExp, setUserExp] = useState(0);
   const [profileAvatar, setProfileAvatar] = useState('');
-
-  // DITAMBAHKAN: State untuk menampung Username di Sidebar
   const [profileUsername, setProfileUsername] = useState('');
 
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -90,16 +94,6 @@ function App() {
     localStorage.setItem('stuprod_onboarded_v1', 'true');
     setShowOnboarding(false);
   };
-
-  useEffect(() => {
-    const checkRestScore = () => {
-      const savedScores = JSON.parse(localStorage.getItem('stuprod_radar_scores') || '{"istirahat":50}');
-      setIsLowRest(savedScores.istirahat < 30);
-    };
-    checkRestScore();
-    window.addEventListener('radarScoreUpdated', checkRestScore);
-    return () => window.removeEventListener('radarScoreUpdated', checkRestScore);
-  }, []);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -161,11 +155,33 @@ function App() {
   }, [activeMenu]);
 
 
-  if (!user) return <Login onLogin={setUser} />;
+  // =========================================================
+  // ROUTING LOGIC: LANDING PAGE -> LOGIN -> DASHBOARD
+  // =========================================================
+  if (!user) {
+    if (showLanding) {
+      // Jika pengguna baru pertama kali datang, tampilkan Landing Page Find IT style
+      return <LandingPage onStart={() => setShowLanding(false)} />;
+    } else {
+      // Jika tombol 'Register/Login' ditekan, tampilkan form Login
+      return (
+        <div className="relative min-h-screen bg-[#050814] text-slate-300">
+          <button 
+            onClick={() => setShowLanding(true)} 
+            className="absolute top-6 left-6 z-50 px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl font-bold text-white border border-white/10 shadow-lg cursor-pointer hover:bg-white/10 hover:border-[#00f0ff]/50 transition-all flex items-center gap-2"
+          >
+            ← Kembali ke Beranda
+          </button>
+          <Login onLogin={setUser} />
+        </div>
+      );
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('stuprod_user');
     setUser(null);
+    setShowLanding(true); // Kembali ke landing page saat logout
   };
 
   const renderContent = () => {
@@ -197,7 +213,7 @@ function App() {
   const activeNavItem = navItems.find(item => item.key === activeMenu) || { icon: <SettingsIcon />, classes: { text: 'text-slate-800 dark:text-slate-100', bg: 'bg-slate-100 dark:bg-slate-800' } };
 
   return (
-    <div className={`flex h-[100dvh] flex-1 font-sans text-sm overflow-hidden text-slate-800 dark:text-slate-100 transition-colors duration-500 ${isLowRest ? 'bg-amber-50/80 sepia-[.20] dark:bg-amber-950/80 dark:sepia-[.10]' : 'bg-[#F8FAFC] dark:bg-slate-950'}`}>
+    <div className="flex h-[100dvh] flex-1 font-sans text-sm overflow-hidden text-slate-800 dark:text-slate-100 transition-colors duration-500 bg-[#F8FAFC] dark:bg-slate-950">
       <CognitiveGuard />
 
       {isSidebarOpen && (
@@ -246,7 +262,6 @@ function App() {
               </div>
               <div className="flex flex-col min-w-0 pr-2">
                 <p className="font-bold text-slate-800 dark:text-white text-sm truncate">{user?.name || 'Student'}</p>
-                {/* MENAMPILKAN USERNAME DI SIDEBAR */}
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold truncate tracking-wide">
                   @{profileUsername}
                 </p>
@@ -264,7 +279,7 @@ function App() {
       <main className="flex-1 flex flex-col h-[100dvh] lg:ml-[280px] min-w-0 relative">
 
         {/* Topbar */}
-        <header className={`flex items-center justify-between w-full h-[76px] shrink-0 border-b border-slate-200/50 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-6 lg:px-10 z-30 sticky ${isLowRest ? 'top-7' : 'top-0'} shadow-md shadow-slate-300/40 dark:shadow-slate-950/40 transition-all`}>
+        <header className="flex items-center justify-between w-full h-[76px] shrink-0 border-b border-slate-200/50 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-6 lg:px-10 z-30 sticky top-0 shadow-md shadow-slate-300/40 dark:shadow-slate-950/40 transition-all">
           <div className="flex items-center gap-4">
             <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl active:scale-95 transition-transform focus:ring-2 focus:ring-indigo-500">
               <Menu className="w-6 h-6" />

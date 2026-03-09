@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -402,4 +402,39 @@ body {
 
 .btn-magnetic:active {
   transform: scale(0.95);
+}
+
+/* ============================================
+   FINDIT LANDING UTILITIES
+   ============================================ */
+@keyframes findit-marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.font-jakarta {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.blur-findit {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.text-glow {
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
+
+.animate-marquee {
+  animation: findit-marquee 25s linear infinite;
 }

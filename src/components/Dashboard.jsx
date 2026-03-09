@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 import { Radar, Bar } from 'react-chartjs-2';
@@ -88,6 +88,15 @@ const generateDynamicInsight = (habits, focusSessions, deadlineCount, radarScore
   return insights[0];
 };
 
+const CATEGORY_META = {
+  academic: { label: 'Akademik', color: 'text-sky-600', dot: 'bg-sky-500' },
+  organization: { label: 'Organisasi', color: 'text-violet-600', dot: 'bg-violet-500' },
+  committee: { label: 'Kepanitiaan', color: 'text-fuchsia-600', dot: 'bg-fuchsia-500' },
+  work: { label: 'Kerja Part-time', color: 'text-emerald-600', dot: 'bg-emerald-500' },
+  personal: { label: 'Pribadi/Keluarga', color: 'text-amber-600', dot: 'bg-amber-500' },
+  project: { label: 'Project/Skripsi', color: 'text-rose-600', dot: 'bg-rose-500' },
+};
+
 const Dashboard = () => {
   const [loginStreak, setLoginStreak] = useState(0);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
@@ -99,6 +108,7 @@ const Dashboard = () => {
   const [impactScore, setImpactScore] = useState(0);
   const [dynamicInsight, setDynamicInsight] = useState(null);
   const [weeklyBarData, setWeeklyBarData] = useState([]);
+  const [categorySummary, setCategorySummary] = useState({});
 
   // Evaluation
   const [evaluationState, setEvaluationState] = useState('idle');
@@ -142,8 +152,9 @@ const Dashboard = () => {
     const activeDeadlines = deadlineTasks.filter(t => !t.completed && new Date(t.deadline) > new Date()).length;
     setActiveDeadlineCount(activeDeadlines);
 
-    const synergy = localStorage.getItem('stuprod_balance_state') || 'balanced';
-    setEnergyCoins(synergy === 'buffed' ? 13 : synergy === 'debuffed' ? 7 : 10);
+    // MENGAMBIL STATE SINERGI UNTUK KOIN ENERGI
+    const synergyStatus = localStorage.getItem('stuprod_balance_state') || 'balanced';
+    setEnergyCoins(synergyStatus === 'buffed' ? 13 : synergyStatus === 'debuffed' ? 7 : 10);
 
     const allHabits = JSON.parse(localStorage.getItem('stuprod_habits_v4') || '[]');
     const doneTodayHabits = allHabits.filter(h => (h.history?.[todayLocal] || 0) >= h.targetCount).length;
@@ -163,6 +174,21 @@ const Dashboard = () => {
       return { day: d.toLocaleDateString('id-ID', { weekday: 'short' }), value: blocksCount + deadlinesOnDay };
     });
     setWeeklyBarData(weekBar);
+
+    // RINGKASAN PERAN (KATEGORI) BERDASARKAN BLOK WAKTU 7 HARI TERAKHIR
+    const categoryCounts = {};
+    Object.keys(timeBlocks || {}).forEach(date => {
+      const dateObj = new Date(date);
+      const now = new Date();
+      const diffDays = Math.round((now - dateObj) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 6 && diffDays >= 0) {
+        (timeBlocks[date] || []).forEach(b => {
+          const key = b.category || 'academic';
+          categoryCounts[key] = (categoryCounts[key] || 0) + 1;
+        });
+      }
+    });
+    setCategorySummary(categoryCounts);
 
     const completedDates = [];
     deadlineTasks.forEach(t => {
@@ -324,6 +350,26 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* ===== COGNITIVE GUARD TRIGGER CARD ===== */}
+        <div className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border border-teal-500/20 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 spatial-shadow mb-6">
+          <div className="p-4 bg-teal-500/20 rounded-full shrink-0 relative">
+            <div className="absolute inset-0 bg-teal-400 blur-xl opacity-30 rounded-full animate-pulse" />
+            <Brain className="w-10 h-10 text-teal-600 dark:text-teal-400 relative z-10" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2">Pikiran Terasa Penuh dan Overload?</h3>
+            <p className="text-slate-600 dark:text-slate-300 text-sm font-medium leading-relaxed max-w-3xl">
+              Sebagai mahasiswa, wajar merasa kewalahan dengan beban tugas akademik dan organisasi. Kapasitas mentalmu saat ini terekam di angka <strong className="text-amber-500">{energyCoins} Koin</strong>. Beri jeda untuk otakmu sejenak, masuk ke zona relaksasi pernapasan 4-7-8 selama 1 menit untuk meregenerasi fokusmu!
+            </p>
+          </div>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('triggerCognitiveGuard'))}
+            className="shrink-0 px-6 py-3.5 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-2xl shadow-lg shadow-teal-500/30 transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+          >
+            <Sparkles className="w-5 h-5" /> Ambil Waktu Jeda
+          </button>
+        </div>
+
         {/* ===== INTELLIGENCE HUB ROW 1 ===== */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
@@ -389,7 +435,29 @@ const Dashboard = () => {
                 {weeklyBarData.length > 0 && <Bar data={barData} options={barOptions} />}
               </div>
             </div>
-            <div className="text-[9px] font-bold uppercase tracking-widest text-slate-400 text-center mt-2">Distribusi produktivitas mingguan</div>
+            <div className="text-[9px] font-bold uppercase tracking-widest text-slate-400 text-center mt-2">
+              Distribusi produktivitas mingguan
+            </div>
+            {Object.keys(categorySummary || {}).filter(k => categorySummary[k] > 0).length > 0 && (
+              <div className="mt-1 flex flex-wrap justify-center gap-2">
+                {Object.entries(categorySummary)
+                  .filter(([_, count]) => count > 0)
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 4)
+                  .map(([key, count]) => {
+                    const meta = CATEGORY_META[key] || CATEGORY_META.academic;
+                    return (
+                      <span
+                        key={key}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800 text-[9px] font-bold ${meta.color}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                        {meta.label}: {count}
+                      </span>
+                    );
+                  })}
+              </div>
+            )}
           </div>
         </div>
 
