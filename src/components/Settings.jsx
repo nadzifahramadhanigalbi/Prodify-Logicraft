@@ -2,8 +2,11 @@ import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
     Bell, Shield, Monitor, LogOut, Check, Trash2, X, AlertTriangle,
-    Download, Upload, HelpCircle, ChevronDown, ChevronUp, Zap, BookOpen, Clock, FileJson
+    Download, Upload, Zap, BookOpen, Clock, FileJson, Brain
 } from 'lucide-react';
+
+// Import getJson untuk keamanan akses data
+import { getJson } from '../utils/storage';
 
 export default function Settings({ onLogout }) {
     const [settings, setSettings] = useState(() => {
@@ -15,6 +18,7 @@ export default function Settings({ onLogout }) {
             focusSounds: true,        // Suara alarm Deep Focus
             strictFocusMode: true,    // Anti-tab out Deep Focus
             autoSaveNotes: true,      // ZenNotes
+            autoCognitiveGuard: false // DITAMBAHKAN: Auto Cognitive Guard (Default False)
         };
         const saved = localStorage.getItem('stuprod_settings');
         return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
@@ -22,7 +26,6 @@ export default function Settings({ onLogout }) {
 
     const [savedMessage, setSavedMessage] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [activeFaq, setActiveFaq] = useState(null);
     const fileInputRef = useRef(null);
 
     // Menghitung estimasi penggunaan LocalStorage secara Real-Time
@@ -37,14 +40,6 @@ export default function Settings({ onLogout }) {
     
     const usedStorageMB = calculateStorage();
     const storagePercent = Math.min((usedStorageMB / 5.0) * 100, 100);
-
-    // FAQ Data
-    const faqs = [
-        { q: "Apakah data saya aman tanpa akun server?", a: "Sangat aman! StuProd dirancang dengan arsitektur 'Local-First'. Seluruh data catatan, tugas, dan kebiasaan Anda dienkripsi dan disimpan secara eksklusif di dalam penyimpanan lokal browser perangkat Anda. Kami tidak memiliki server yang menyadap data Anda." },
-        { q: "Bagaimana cara memindahkan data ke perangkat lain?", a: "Gunakan fitur 'Backup & Restore Data' di halaman pengaturan ini. Anda dapat mengekspor seluruh data menjadi satu file khusus (.json), lalu mengunggahnya kembali saat Anda membuka StuProd di laptop atau browser lain." },
-        { q: "Kenapa pohon saya layu di Deep Focus?", a: "Jika Anda mengaktifkan 'Mode Fokus Ketat' di pengaturan, sistem akan mendeteksi jika Anda meninggalkan tab aplikasi (beralih ke tab Youtube/Sosmed). Hal ini akan otomatis membuat pohon fokus Anda layu untuk melatih disiplin Anda." },
-        { q: "Bagaimana cara kerja Skor Dampak (Impact Score)?", a: "Skor ini mengkalkulasi efisiensi Anda berdasarkan: persentase habit yang selesai, jumlah sesi fokus 25 menit, tugas yang terselesaikan, serta hasil evaluasi kesehatan mental (Radar Keseimbangan) Anda setiap minggunya." },
-    ];
 
     const handleToggle = (key) => {
         const newSettings = { ...settings, [key]: !settings[key] };
@@ -66,38 +61,50 @@ export default function Settings({ onLogout }) {
         setTimeout(() => setSavedMessage(''), 2000);
     };
 
-    // FITUR EKSPOR DATA LOKAL (BACKUP)
-    const handleExportData = () => {
-        const appData = {
-            user: localStorage.getItem('stuprod_user'),
-            profile: localStorage.getItem('stuprod_profileInfo'),
-            settings: localStorage.getItem('stuprod_settings'),
-            tasks: localStorage.getItem('stuprod_tasks'),
-            matrix: localStorage.getItem('matrix_tasks'),
-            blocks: localStorage.getItem('time_blocks'),
-            habits: localStorage.getItem('stuprod_habits_v4'),
-            focus: localStorage.getItem('forest_stats'),
-            notes: localStorage.getItem('zen_pages_multi'),
-            radar: localStorage.getItem('stuprod_radar_scores'),
-            goal: localStorage.getItem('stuprod_global_goal')
-        };
-
-        const dataStr = JSON.stringify(appData, null, 2);
-        const blob = new Blob([dataStr], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `StuProd_Backup_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        setSavedMessage('Data berhasil diunduh (Backup)');
+    const showNotification = (msg) => {
+        setSavedMessage(msg);
         setTimeout(() => setSavedMessage(''), 3000);
     };
 
-    // FITUR IMPOR DATA LOKAL (RESTORE)
+    // FITUR EKSPOR DATA LOKAL UTUH (BACKUP)
+    const handleExportData = () => {
+        try {
+            const keysToExport = [
+                'stuprod_user', 'stuprod_settings', 'zen_pages_multi', 'matrix_tasks', 
+                'stuprod_tasks', 'time_blocks', 'stuprod_habits_v4', 'forest_stats', 
+                'stuprod_radar_scores', 'stuprod_login_streak', 'stuprod_academic_schedule',
+                'stuprod_profileInfo', 'stuprod_global_goal', 'stuprod_balance_state', 'stuprod_guide_finished'
+            ];
+            
+            const allData = {};
+            keysToExport.forEach(key => {
+                const val = localStorage.getItem(key);
+                if (val) {
+                    try { 
+                        allData[key] = JSON.parse(val); 
+                    } catch { 
+                        allData[key] = val; // Fallback cerdas untuk data string murni
+                    }
+                }
+            });
+
+            // Export file JSON
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `StuProd_Backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            
+            showNotification("Data berhasil diekspor! (Backup Selesai)");
+        } catch (error) {
+            alert("Gagal mengekspor data.");
+            console.error(error);
+        }
+    };
+
+    // FITUR IMPOR DATA LOKAL UTUH (RESTORE)
     const handleImportData = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -106,27 +113,14 @@ export default function Settings({ onLogout }) {
         reader.onload = (event) => {
             try {
                 const importedData = JSON.parse(event.target.result);
-
-                // Restore all keys safely
                 Object.keys(importedData).forEach(key => {
-                    if (importedData[key] !== null && importedData[key] !== undefined) {
-                        // Memetakan key JSON kembali ke key localStorage yang sesuai
-                        const storageMap = {
-                            user: 'stuprod_user', profile: 'stuprod_profileInfo', settings: 'stuprod_settings',
-                            tasks: 'stuprod_tasks', matrix: 'matrix_tasks', blocks: 'time_blocks',
-                            habits: 'stuprod_habits_v4', focus: 'forest_stats', notes: 'zen_pages_multi',
-                            radar: 'stuprod_radar_scores', goal: 'stuprod_global_goal'
-                        };
-                        if (storageMap[key]) {
-                            localStorage.setItem(storageMap[key], importedData[key]);
-                        }
-                    }
+                    const valueToStore = typeof importedData[key] === 'object' ? JSON.stringify(importedData[key]) : importedData[key];
+                    localStorage.setItem(key, valueToStore);
                 });
-
-                setSavedMessage('Data berhasil dipulihkan! Memuat ulang...');
-                setTimeout(() => window.location.reload(), 1500); // Reload to apply changes
-
-            } catch {
+                window.dispatchEvent(new Event('storage'));
+                showNotification("Data berhasil dipulihkan! Memuat ulang...");
+                setTimeout(() => window.location.reload(), 1500); // Reload agar seluruh state merender ulang
+            } catch (error) {
                 alert("File backup tidak valid atau rusak!");
             }
         };
@@ -146,10 +140,24 @@ export default function Settings({ onLogout }) {
         window.dispatchEvent(new Event('storage'));
     };
 
+    // HARD RESET / HAPUS AKUN TOTAL
     const handleDeleteAccount = () => {
-        localStorage.clear();
-        onLogout();
-        window.location.reload();
+        if (window.confirm("PERINGATAN ZONA BAHAYA!\n\nTindakan ini akan melenyapkan SELURUH data produktivitas, catatan, jadwal, profil, dan pengaturan Anda dari browser ini secara permanen. Anda akan dikembalikan ke halaman login.\n\nApakah Anda benar-benar yakin?")) {
+            
+            // LOGIKA MASTER: Sapu bersih SEMUA key milik StuProd secara dinamis!
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('stuprod_') || key.startsWith('zen_') || key.startsWith('matrix_') || key.startsWith('time_') || key.startsWith('forest_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            window.dispatchEvent(new Event('storage'));
+            alert("Sistem berhasil di-reset. Sampai jumpa kembali!");
+            onLogout(); // Panggil fungsi logout dari App.jsx
+            window.location.reload(); // Memaksa browser memuat ulang dan me-logout user
+        } else {
+            setShowDeleteModal(false);
+        }
     };
 
     return (
@@ -194,6 +202,15 @@ export default function Settings({ onLogout }) {
                         </div>
 
                         <div className="space-y-6">
+                            {/* DITAMBAHKAN: Auto Cognitive Guard */}
+                            <div className="flex items-center justify-between">
+                                <div className="pr-4">
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5"><Brain className="w-3.5 h-3.5 text-teal-500" /> Auto-Cognitive Guard</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Otomatis munculkan layar relaksasi saat beban tugas harian melebihi kapasitas mental.</p>
+                                </div>
+                                <Toggle isOn={settings.autoCognitiveGuard} onClick={() => handleToggle('autoCognitiveGuard')} />
+                            </div>
+
                             {/* Notifikasi Global */}
                             <div className="flex items-center justify-between">
                                 <div className="pr-4">
@@ -221,15 +238,6 @@ export default function Settings({ onLogout }) {
                                 <Toggle isOn={settings.strictFocusMode} onClick={() => handleToggle('strictFocusMode')} />
                             </div>
 
-                            {/* Deep Focus Sound */}
-                            <div className="flex items-center justify-between">
-                                <div className="pr-4">
-                                    <p className="text-sm font-bold text-slate-800 dark:text-white">Efek Suara Pomodoro</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Mainkan suara saat sesi tanam selesai/gagal.</p>
-                                </div>
-                                <Toggle isOn={settings.focusSounds} onClick={() => handleToggle('focusSounds')} />
-                            </div>
-
                             {/* Auto Save Notes */}
                             <div className="flex items-center justify-between">
                                 <div className="pr-4">
@@ -242,80 +250,55 @@ export default function Settings({ onLogout }) {
                     </div>
                 </div>
 
-                {/* Kanan: Data & FAQ */}
+                {/* Kanan: Manajemen Data (FAQ Dihapus) */}
                 <div className="space-y-6">
                     {/* Backup & Restore Data */}
-                    <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-700/60 p-6 md:p-8 shadow-sm transition-colors">
-                        <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
+                    <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-700/60 p-6 md:p-8 shadow-sm transition-colors h-full flex flex-col">
+                        <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6 shrink-0">
                             <div className="p-2.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-xl"><FileJson className="w-5 h-5" /></div>
-                            <h3 className="font-bold text-lg text-slate-800 dark:text-white transition-colors">Backup & Restore Data</h3>
+                            <h3 className="font-bold text-lg text-slate-800 dark:text-white transition-colors">Manajemen Data</h3>
                         </div>
 
-                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
-                            Aplikasi ini berjalan tanpa database eksternal. Pindahkan profil, catatan, dan progres Anda ke perangkat lain dengan mengunduh file <strong className="text-emerald-600 dark:text-emerald-400">.json</strong> ini.
-                        </p>
-
-                        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                            <button onClick={handleExportData} className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-xl font-bold text-sm transition-colors cursor-pointer">
-                                <Download className="w-4 h-4" /> Ekspor (Backup)
-                            </button>
-                            <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-xl font-bold text-sm transition-colors cursor-pointer">
-                                <Upload className="w-4 h-4" /> Impor (Restore)
-                                <input type="file" accept=".json" ref={fileInputRef} onChange={handleImportData} className="hidden" />
-                            </button>
-                        </div>
-
-                        {/* BAGIAN PROGRESS BAR KAPASITAS YANG DIUPDATE */}
-                        <div className="pb-6 border-b border-slate-100 dark:border-slate-800">
-                            <div className="flex justify-between items-end mb-2">
-                                <p className="text-sm font-bold text-slate-800 dark:text-white">Kapasitas Penyimpanan Lokal</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{usedStorageMB} MB / 5.0 MB</p>
-                            </div>
-                            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 shadow-inner relative overflow-hidden">
-                                <div className={`h-full rounded-full transition-all duration-1000 ${storagePercent > 80 ? 'bg-rose-500' : storagePercent > 50 ? 'bg-amber-500' : 'bg-indigo-600'}`} style={{ width: `${storagePercent}%` }}>
-                                    <div className="absolute right-0 top-0 bottom-0 w-6 bg-white/20 animate-pulse rounded-r-full"></div>
-                                </div>
-                            </div>
-                            <p className="text-[10px] text-slate-500 mt-2">
-                                *Jika sering pakai whiteboard (ZenNotes), disarankan rutin ekspor PDF & backup JSON.
+                        <div className="flex-1">
+                            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+                                Aplikasi ini berjalan tanpa database eksternal. Pindahkan profil, catatan, dan progres Anda ke perangkat lain dengan mengunduh file <strong className="text-emerald-600 dark:text-emerald-400">.json</strong> ini.
                             </p>
-                        </div>
 
-                        <div className="pt-6 flex justify-between items-center">
-                            <div>
-                                <p className="text-sm font-bold text-slate-800 dark:text-white">Reset Fungsional</p>
-                                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Hapus catatan & tugas (Akun aman)</p>
+                            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                                <button onClick={handleExportData} className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-xl font-bold text-sm transition-colors cursor-pointer">
+                                    <Download className="w-4 h-4" /> Ekspor (Backup)
+                                </button>
+                                <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-xl font-bold text-sm transition-colors cursor-pointer">
+                                    <Upload className="w-4 h-4" /> Impor (Restore)
+                                    <input type="file" accept=".json" ref={fileInputRef} onChange={handleImportData} className="hidden" />
+                                </button>
                             </div>
-                            <button onClick={handleClearLocalData} className="px-4 py-2 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 transition-all cursor-pointer shadow-sm">
-                                Bersihkan Data
-                            </button>
-                        </div>
-                    </div>
 
-                    {/* FAQ / Help Center */}
-                    <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-700/60 p-6 md:p-8 shadow-sm transition-colors">
-                        <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
-                            <div className="p-2.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded-xl"><HelpCircle className="w-5 h-5" /></div>
-                            <h3 className="font-bold text-lg text-slate-800 dark:text-white transition-colors">Pusat Bantuan (FAQ)</h3>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            {faqs.map((faq, index) => (
-                                <div key={index} className="border border-slate-200 dark:border-slate-700/60 rounded-xl overflow-hidden transition-colors bg-slate-50/50 dark:bg-slate-800/30">
-                                    <button
-                                        onClick={() => setActiveFaq(activeFaq === index ? null : index)}
-                                        className="w-full px-4 py-3 flex justify-between items-center text-left focus:outline-none cursor-pointer"
-                                    >
-                                        <span className="font-semibold text-sm text-slate-700 dark:text-slate-200 pr-4">{faq.q}</span>
-                                        {activeFaq === index ? <ChevronUp className="w-4 h-4 text-indigo-500 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />}
-                                    </button>
-                                    {activeFaq === index && (
-                                        <div className="px-4 pb-4 pt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-700/50 mx-4 mt-1">
-                                            {faq.a}
-                                        </div>
-                                    )}
+                            {/* BAGIAN PROGRESS BAR KAPASITAS YANG DIUPDATE */}
+                            <div className="pb-6 border-b border-slate-100 dark:border-slate-800">
+                                <div className="flex justify-between items-end mb-2">
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white">Kapasitas Penyimpanan Lokal</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{usedStorageMB} MB / 5.0 MB</p>
                                 </div>
-                            ))}
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 shadow-inner relative overflow-hidden">
+                                    <div className={`h-full rounded-full transition-all duration-1000 ${storagePercent > 80 ? 'bg-rose-500' : storagePercent > 50 ? 'bg-amber-500' : 'bg-indigo-600'}`} style={{ width: `${storagePercent}%` }}>
+                                        <div className="absolute right-0 top-0 bottom-0 w-6 bg-white/20 animate-pulse rounded-r-full"></div>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-2">
+                                    *Jika sering pakai whiteboard (ZenNotes), disarankan rutin ekspor PDF & backup JSON.
+                                </p>
+                            </div>
+
+                            <div className="pt-6 flex justify-between items-center">
+                                <div>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white">Reset Fungsional</p>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Hapus catatan & tugas (Akun aman)</p>
+                                </div>
+                                <button onClick={handleClearLocalData} className="px-4 py-2 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 transition-all cursor-pointer shadow-sm">
+                                    Bersihkan Data
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

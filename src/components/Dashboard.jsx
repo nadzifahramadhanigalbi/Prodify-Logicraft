@@ -129,7 +129,13 @@ const Dashboard = () => {
     id: i, date: formatDateStr(new Date(new Date().setDate(new Date().getDate() - (47 - i)))), active: false, intensity: 0, count: 0
   })));
   
-  const userName = getJson('stuprod_user', { name: 'Mahasiswa' }).name;
+  // =========================================================
+  // DOSA 3 DISELESAIKAN: ANTI NULL POINTER EXCEPTION
+  // =========================================================
+  const userObj = getJson('stuprod_user', { name: 'Mahasiswa' });
+  const userName = userObj?.name || 'Mahasiswa';
+  // =========================================================
+
   const greetingMeta = useMemo(() => {
     const h = new Date().getHours();
     if (h < 6) return { greeting: 'Selamat Dini Hari', icon: '🌙' };

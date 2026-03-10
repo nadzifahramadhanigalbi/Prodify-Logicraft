@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, X } from 'lucide-react';
+
+// IMPORT STORAGE TINGKAT DEWA UNTUK MENGAMBIL DATA DENGAN AMAN
+import { getJson, getLocalDateKey } from '../utils/storage';
 
 const BREATHING_PATTERN = [
     { phase: 'inhale', seconds: 4 },
@@ -17,10 +20,43 @@ const CognitiveGuard = () => {
     const [breathingPhase, setBreathingPhase] = useState('inhale');
     const [timeLeft, setTimeLeft] = useState(0);
 
-    useEffect(() => {
-        // EXPERT TACTIC: Hanya menyisakan pemicu manual (CustomEvent & Keyboard Shortcut)
-        // Timer otomatis 4 Jam telah dihapus demi UX yang tidak invasif.
+    // =========================================================================
+    // FITUR BARU (AUTO-TRIGGER LOGIC): Mendeteksi Overload / Burnout secara Cerdas
+    // =========================================================================
+    const checkCognitiveOverload = useCallback(() => {
+        // 1. Cek apakah pengguna mengaktifkan fitur ini di Settings
+        const settings = getJson('stuprod_settings', {});
+        if (!settings.autoCognitiveGuard) return;
 
+        // 2. Tentukan batas energi koin maksimal berdasarkan status Synergy hari ini
+        const synergyState = localStorage.getItem('stuprod_balance_state') || 'balanced';
+        const MAX_DAILY_ENERGY = synergyState === 'buffed' ? 13 : synergyState === 'debuffed' ? 7 : 10;
+
+        // 3. Hitung total beban energi dari tugas yang dijadwalkan hari ini
+        const timeBlocks = getJson('time_blocks', {});
+        const todayKey = getLocalDateKey(new Date());
+        const todayBlocks = timeBlocks[todayKey] || [];
+        const currentDailyEnergy = todayBlocks.reduce((acc, block) => acc + (block.energy || 1), 0);
+
+        // 4. Jika overload (burnout), panggil sistem pernapasan!
+        if (currentDailyEnergy > MAX_DAILY_ENERGY) {
+            // Mencegah layar pernapasan muncul berulang kali di hari yang sama (anti-spam)
+            const lastTriggered = localStorage.getItem('stuprod_last_auto_guard');
+            if (lastTriggered !== todayKey) {
+                setTriggerGuard(true);
+                localStorage.setItem('stuprod_last_auto_guard', todayKey);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        // Cek saat aplikasi pertama dimuat
+        checkCognitiveOverload();
+
+        // Cek setiap kali pengguna menambah/mengedit jadwal di TimeManager
+        window.addEventListener('storage', checkCognitiveOverload);
+
+        // Pemicu Manual (Shortcut dan Button di Dashboard)
         const handleKeyDown = (e) => {
             // Shortcut darurat: Ctrl + Shift + B (Breath)
             if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'b') {
@@ -36,10 +72,11 @@ const CognitiveGuard = () => {
         window.addEventListener('triggerCognitiveGuard', handleManualTrigger);
 
         return () => {
+            window.removeEventListener('storage', checkCognitiveOverload);
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('triggerCognitiveGuard', handleManualTrigger);
         };
-    }, []);
+    }, [checkCognitiveOverload]);
 
     useEffect(() => {
         if (!triggerGuard) return undefined;
