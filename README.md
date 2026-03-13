@@ -68,22 +68,5 @@ npm run preview
 ## Deployment
 
 Vercel
-- Repository URL: `https://github.com/<username>/<repo>`
+- Repository URL: `https://github.com/nouvalarrrgh/wdc`
 - Hosting URL: `https://<project>.vercel.app`
-
-## Kepatuhan Rulebook (Ringkas)
-
-- Frontend-only: Ya
-- Tanpa backend framework terlarang: Ya
-- Website sudah dapat di-hosting statis: Ya
-- Fitur utama produktivitas: 5 fitur
-- Source code + hosting link: disiapkan melalui repository dan deployment
-
-## Catatan Presentasi Final
-
-Untuk sesi final 10 menit presentasi + 10 menit tanya jawab:
-
-1. Jelaskan masalah produktivitas mahasiswa yang disasar.
-2. Demo alur lintas fitur dari Notes -> Matrix -> Kalender -> Dashboard.
-3. Tunjukkan value desain (warna, struktur, dan alasan UX).
-4. Tunjukkan reliability (autosave, local-first, backup/restore).
