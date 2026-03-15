@@ -1,5 +1,5 @@
 Nama Website: Prodify
-Nama Tim: [Isi Nama Tim Kamu]
+Nama Tim: Logicraft
 Dengan Backend: TIDAK
 Daftar Fitur Utama:
 1. Intelligent Dashboard & Balance Radar
