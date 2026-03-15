@@ -25,8 +25,8 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       manifest: {
-        name: 'StuProd',
-        short_name: 'StuProd',
+        name: 'Prodify',
+        short_name: 'Prodify',
         description: 'Empowering students through innovative productivity tools',
         theme_color: '#4F46E5',
         icons: [
