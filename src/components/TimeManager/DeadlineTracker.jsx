@@ -104,7 +104,7 @@ const DeadlineTracker = ({
                       {task.completed && <Check className="w-3.5 h-3.5 text-white" />}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <h4 className={`font-bold text-base leading-tight truncate ${task.completed ? "text-slate-400 dark:text-slate-500 line-through" : "text-slate-800 dark:text-slate-200"}`}>
+                      <h4 className={`font-bold text-base leading-tight break-words [overflow-wrap:anywhere] line-clamp-2 ${task.completed ? "text-slate-400 dark:text-slate-500 line-through" : "text-slate-800 dark:text-slate-200"}`}>
                         {task.text}
                       </h4>
                       <div className="flex flex-wrap items-center gap-2 mt-1.5">

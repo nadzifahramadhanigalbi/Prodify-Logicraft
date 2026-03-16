@@ -353,6 +353,7 @@ const TimeManager = () => {
             <EisenhowerMatrix
               clearCompletedTasks={clearCompletedTasks} quadrants={quadrants} tasks={tasks}
               openScheduleModal={openScheduleModal} toggleTaskStatus={toggleTaskStatus} deleteTask={deleteTask}
+              moveTaskToQuadrant={assignTaskQuadrant}
             />
 
             <DeadlineTracker

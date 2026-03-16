@@ -102,10 +102,11 @@ const Habits = () => {
     const hasCog = completed.some((h) => h.pillar === "cognitive");
     const hasVit = completed.some((h) => h.pillar === "vitality");
     const hasMind = completed.some((h) => h.pillar === "mindfulness");
+    const hasSoc = completed.some((h) => h.pillar === "social");
 
     let newState = "balanced";
-    if (hasVit && hasMind) newState = "buffed";
-    else if (hasCog && !hasVit && !hasMind) newState = "debuffed";
+    if (hasVit && (hasMind || hasSoc)) newState = "buffed";
+    else if (hasCog && !hasVit && !hasMind && !hasSoc) newState = "debuffed";
 
     setBalanceState(newState);
     setJson("prodify_balance_state", newState);
@@ -147,7 +148,7 @@ const Habits = () => {
     let totalCompleted = 0;
     const totalTargets = habits.length * 7;
     const dailyCompletion = [];
-    let pillarCounts = { cognitive: 0, vitality: 0, mindfulness: 0 };
+    let pillarCounts = { cognitive: 0, vitality: 0, mindfulness: 0, social: 0 };
 
     days.forEach(day => {
       let dayCompleted = 0;
@@ -155,7 +156,8 @@ const Habits = () => {
         if (getCurrentCount(h, day.dateStr) >= h.targetCount) {
           dayCompleted++;
           totalCompleted++;
-          if (h.pillar) pillarCounts[h.pillar]++;
+          const key = h.pillar || "cognitive";
+          if (Object.prototype.hasOwnProperty.call(pillarCounts, key)) pillarCounts[key]++;
         }
       });
       dailyCompletion.push({
@@ -179,6 +181,9 @@ const Habits = () => {
     { id: "pr_u2", icon: "💧", title: "Hidrasi Penuh", pillar: "vitality", target: 8, desc: "Minum 8 gelas air / hari" },
     { id: "pr_u3", icon: "🧠", title: "Review Flashcard Belajar", pillar: "cognitive", target: 3, desc: "Sesi spaced repetition materi kelas" },
     { id: "pr_u4", icon: "🧘", title: "Meditasi Pagi", pillar: "mindfulness", target: 1, desc: "Duduk tenang 5 menit sebelum ngampus" },
+
+    { id: "pr_u5", icon: "🤝", title: "Check-in Teman Kelas", pillar: "social", target: 1, desc: "Tanya kabar & sync tugas kelompok 5 menit" },
+    { id: "pr_u6", icon: "👥", title: "Diskusi Kelompok Ringan", pillar: "social", target: 1, desc: "Ngobrol 10 menit untuk pecah kebuntuan tugas" },
 
     // --- ANAK IT / ILKOM ---
     { id: "pr_it1", icon: "💻", title: "Latihan Ngoding (Leet)", pillar: "cognitive", target: 1, desc: "Kerjakan 1 algoritma untuk asah logika" },
@@ -343,8 +348,14 @@ const Habits = () => {
     setShowAddModal(false);
   };
 
-  const totalCompleted = habits.filter((h) => getCurrentCount(h) >= h.targetCount).length;
-  const showConstellation = totalCompleted > 0;
+  const completedToday = habits.filter((h) => getCurrentCount(h) >= h.targetCount);
+  const allowedPillars = new Set(["cognitive", "vitality", "mindfulness", "social"]);
+  const completedPillarCount = new Set(
+    completedToday.map((h) => (allowedPillars.has(h.pillar) ? h.pillar : "cognitive"))
+  ).size;
+  const constellationReady = completedPillarCount >= 4;
+  // Progress card shows when user has habits; "Terhubung" requires 4 unique pillars completed today.
+  const showConstellation = habits.length > 0;
 
   const renderHabitItem = (habit) => {
     const isCompleted = getCurrentCount(habit) >= habit.targetCount;
@@ -368,6 +379,11 @@ const Habits = () => {
       textChecked = isCompleted ? "text-amber-900 dark:text-amber-200" : "text-slate-700 dark:text-slate-200";
       iconColor = isCompleted ? "text-amber-200 dark:text-amber-500" : "text-amber-400 dark:text-amber-400";
       ringColor = "text-amber-500 dark:text-amber-400";
+    } else if (habit.pillar === "social") {
+      strokeColor = isCompleted ? "border-rose-300 dark:border-rose-500/50 shadow-md bg-rose-50/50 dark:bg-rose-900/20" : "border-slate-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-500/30 shadow-sm";
+      textChecked = isCompleted ? "text-rose-900 dark:text-rose-200" : "text-slate-700 dark:text-slate-200";
+      iconColor = isCompleted ? "text-rose-200 dark:text-rose-500" : "text-rose-400 dark:text-rose-400";
+      ringColor = "text-rose-500 dark:text-rose-400";
     }
 
     const progressPercent = (getCurrentCount(habit) / habit.targetCount) * 100;
@@ -384,9 +400,9 @@ const Habits = () => {
           </div>
         </div>
 
-        <div className="flex-1 cursor-pointer flex justify-between items-center pr-1" onClick={() => setActiveDetailHabit(habit)}>
-          <div>
-            <h3 className={`text-[15px] font-bold transition-colors ${textChecked}`}>{habit.title}</h3>
+        <div className="flex-1 min-w-0 cursor-pointer flex justify-between items-center pr-1" onClick={() => setActiveDetailHabit(habit)}>
+          <div className="min-w-0">
+            <h3 className={`text-[15px] font-bold transition-colors break-words [overflow-wrap:anywhere] line-clamp-2 ${textChecked}`}>{habit.title}</h3>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase flex items-center gap-1">
                 <Flame className={`w-3.5 h-3.5 ${habit.streak > 0 ? "text-orange-400" : "text-slate-300 dark:text-slate-600"}`} />
@@ -438,25 +454,31 @@ const Habits = () => {
               {showConstellation && (
                 <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-[2rem] p-6 relative overflow-hidden border border-indigo-500/20 shadow-xl animate-fade-in-up">
                   <div className="absolute inset-0 opacity-50 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-500/20 via-transparent to-transparent" />
-                  <div className="absolute right-0 top-0 bottom-0 w-1/2 flex items-center justify-end pr-4 md:pr-10 opacity-80 pointer-events-none">
-                    <svg width="200" height="100" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20 50 L80 20 L140 70 L180 30" stroke="rgba(199, 210, 254, 0.1)" strokeWidth="2" />
-                      <path d="M20 50 L80 20" stroke="#818CF8" strokeWidth="2" className={`transition-all duration-1000 ${totalCompleted >= 2 ? 'opacity-100' : 'opacity-0'}`} />
-                      <path d="M80 20 L140 70" stroke="#818CF8" strokeWidth="2" className={`transition-all duration-1000 ${totalCompleted >= 3 ? 'opacity-100' : 'opacity-0'}`} />
-                      <path d="M140 70 L180 30" stroke="#818CF8" strokeWidth="2" className={`transition-all duration-1000 ${totalCompleted >= 4 ? 'opacity-100' : 'opacity-0'}`} />
-                      <circle cx="20" cy="50" r="4" fill={totalCompleted >= 1 ? "#C7D2FE" : "#312E81"} className={`transition-all duration-500 ${totalCompleted >= 1 ? 'drop-shadow-[0_0_8px_rgba(199,210,254,0.8)]' : ''}`} />
-                      <circle cx="80" cy="20" r="5" fill={totalCompleted >= 2 ? "#C7D2FE" : "#312E81"} className={`transition-all duration-500 ${totalCompleted >= 2 ? 'drop-shadow-[0_0_8px_rgba(199,210,254,0.8)] animate-pulse' : ''}`} />
-                      <circle cx="140" cy="70" r="4" fill={totalCompleted >= 3 ? "#C7D2FE" : "#312E81"} className={`transition-all duration-500 ${totalCompleted >= 3 ? 'drop-shadow-[0_0_8px_rgba(199,210,254,0.8)]' : ''}`} />
-                      <circle cx="180" cy="30" r="6" fill={totalCompleted >= 4 ? "#C7D2FE" : "#312E81"} className={`transition-all duration-500 ${totalCompleted >= 4 ? 'drop-shadow-[0_0_8px_rgba(199,210,254,0.8)] animate-pulse' : ''}`} />
-                    </svg>
-                  </div>
-                  <div className="relative z-10 flex items-center gap-4">
-                    <div className="w-14 h-14 bg-indigo-500/20 backdrop-blur-md rounded-2xl border border-indigo-400/30 flex items-center justify-center shadow-inner">
-                      <Moon className="w-7 h-7 text-indigo-300" />
+                  <div className="relative z-10 flex items-center justify-between gap-6">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-14 h-14 shrink-0 bg-indigo-500/20 backdrop-blur-md rounded-2xl border border-indigo-400/30 flex items-center justify-center shadow-inner">
+                        {constellationReady ? <Star className="w-7 h-7 text-indigo-200" /> : <Moon className="w-7 h-7 text-indigo-300" />}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-black text-white text-lg tracking-wide">{constellationReady ? "Konstelasi Terhubung" : "Konstelasi Belum Lengkap"}</h3>
+                        <p className="text-indigo-200 text-xs font-medium mt-1">{completedPillarCount}/4 pilar menyala hari ini.</p>
+                        <p className="text-indigo-200/80 text-[11px] font-semibold mt-1 break-words leading-relaxed">
+                          Syarat: 4 habit selesai dari 4 pilar berbeda (Kognitif, Vitalitas, Mindfulness, Sosial).
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-black text-white text-lg tracking-wide">Konstelasi Terhubung</h3>
-                      <p className="text-indigo-200 text-xs font-medium mt-1">{totalCompleted} kebiasaan menyala hari ini.</p>
+
+                    <div className="shrink-0 opacity-80 pointer-events-none hidden sm:block">
+                      <svg className="w-[160px] md:w-[200px] h-auto" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 50 L80 20 L140 70 L180 30" stroke="rgba(199, 210, 254, 0.1)" strokeWidth="2" />
+                        <path d="M20 50 L80 20" stroke="#818CF8" strokeWidth="2" className={`transition-all duration-1000 ${completedPillarCount >= 2 ? 'opacity-100' : 'opacity-0'}`} />
+                        <path d="M80 20 L140 70" stroke="#818CF8" strokeWidth="2" className={`transition-all duration-1000 ${completedPillarCount >= 3 ? 'opacity-100' : 'opacity-0'}`} />
+                        <path d="M140 70 L180 30" stroke="#818CF8" strokeWidth="2" className={`transition-all duration-1000 ${completedPillarCount >= 4 ? 'opacity-100' : 'opacity-0'}`} />
+                        <circle cx="20" cy="50" r="4" fill={completedPillarCount >= 1 ? "#C7D2FE" : "#312E81"} className={`transition-all duration-500 ${completedPillarCount >= 1 ? 'drop-shadow-[0_0_8px_rgba(199,210,254,0.8)]' : ''}`} />
+                        <circle cx="80" cy="20" r="5" fill={completedPillarCount >= 2 ? "#C7D2FE" : "#312E81"} className={`transition-all duration-500 ${completedPillarCount >= 2 ? 'drop-shadow-[0_0_8px_rgba(199,210,254,0.8)] animate-pulse' : ''}`} />
+                        <circle cx="140" cy="70" r="4" fill={completedPillarCount >= 3 ? "#C7D2FE" : "#312E81"} className={`transition-all duration-500 ${completedPillarCount >= 3 ? 'drop-shadow-[0_0_8px_rgba(199,210,254,0.8)]' : ''}`} />
+                        <circle cx="180" cy="30" r="6" fill={completedPillarCount >= 4 ? "#C7D2FE" : "#312E81"} className={`transition-all duration-500 ${completedPillarCount >= 4 ? 'drop-shadow-[0_0_8px_rgba(199,210,254,0.8)] animate-pulse' : ''}`} />
+                      </svg>
                     </div>
                   </div>
                 </div>
@@ -604,9 +626,27 @@ const Habits = () => {
             </h3>
             <div className="flex overflow-x-auto gap-4 pb-4 snap-x custom-scrollbar">
               {POPULAR_ROUTINES.map((routine) => {
-                const borderHoverColor = routine.pillar === "cognitive" ? "hover:border-blue-300 dark:hover:border-blue-500/50" : routine.pillar === "vitality" ? "hover:border-emerald-300 dark:hover:border-emerald-500/50" : "hover:border-amber-300 dark:hover:border-amber-500/50";
-                const textPillarColor = routine.pillar === "cognitive" ? "text-blue-500 dark:text-blue-400" : routine.pillar === "vitality" ? "text-emerald-500 dark:text-emerald-400" : "text-amber-500 dark:text-amber-400";
-                const labelPillarColor = routine.pillar === "cognitive" ? "bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20" : routine.pillar === "vitality" ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20" : "bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20";
+                const borderHoverColor = routine.pillar === "cognitive"
+                  ? "hover:border-blue-300 dark:hover:border-blue-500/50"
+                  : routine.pillar === "vitality"
+                    ? "hover:border-emerald-300 dark:hover:border-emerald-500/50"
+                    : routine.pillar === "mindfulness"
+                      ? "hover:border-amber-300 dark:hover:border-amber-500/50"
+                      : "hover:border-rose-300 dark:hover:border-rose-500/50";
+                const textPillarColor = routine.pillar === "cognitive"
+                  ? "text-blue-500 dark:text-blue-400"
+                  : routine.pillar === "vitality"
+                    ? "text-emerald-500 dark:text-emerald-400"
+                    : routine.pillar === "mindfulness"
+                      ? "text-amber-500 dark:text-amber-400"
+                      : "text-rose-500 dark:text-rose-400";
+                const labelPillarColor = routine.pillar === "cognitive"
+                  ? "bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20"
+                  : routine.pillar === "vitality"
+                    ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20"
+                    : routine.pillar === "mindfulness"
+                      ? "bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20"
+                      : "bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20";
 
                 return (
                   <div key={routine.id} className={`shrink-0 w-64 border border-slate-200/50 dark:border-slate-700/50 liquid-glass dark:bg-slate-800/60 rounded-2xl p-5 snap-center spatial-hover transition-all cursor-pointer group ${borderHoverColor}`}>
@@ -614,7 +654,7 @@ const Habits = () => {
                       <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-xl shadow-inner">{routine.icon}</div>
                       <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${labelPillarColor} ${textPillarColor}`}>{routine.pillar} ({routine.target}x)</span>
                     </div>
-                    <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-1 line-clamp-1">{routine.title}</h4>
+                    <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-1 break-words [overflow-wrap:anywhere] line-clamp-2">{routine.title}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 h-8 line-clamp-2">{routine.desc}</p>
                     <button onClick={() => handleApplyRoutine(routine)} className="w-full py-2 bg-slate-800 dark:bg-slate-700 text-white text-xs font-bold rounded-xl btn-magnetic spatial-hover transition-colors shadow-[0_4px_10px_-2px_rgba(30,41,59,0.4)] flex items-center justify-center gap-2 relative overflow-hidden">
                       <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -703,18 +743,22 @@ const Habits = () => {
                 </div>
                 <div>
                   <h4 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2"><Target className="w-4 h-4" /> Pencapaian Pilar</h4>
-                  <div className="flex gap-2">
-                    <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-center shadow-sm">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-center shadow-sm">
                       <span className="block text-lg font-black text-blue-600 dark:text-blue-400">{weeklyStats.pillarCounts.cognitive}</span>
                       <span className="text-[8px] font-bold uppercase text-slate-400 dark:text-slate-500 mt-1">Kognitif</span>
                     </div>
-                    <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-center shadow-sm">
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-center shadow-sm">
                       <span className="block text-lg font-black text-emerald-600 dark:text-emerald-400">{weeklyStats.pillarCounts.vitality}</span>
                       <span className="text-[8px] font-bold uppercase text-slate-400 dark:text-slate-500 mt-1">Vitalitas</span>
                     </div>
-                    <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-center shadow-sm">
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-center shadow-sm">
                       <span className="block text-lg font-black text-amber-600 dark:text-amber-400">{weeklyStats.pillarCounts.mindfulness}</span>
                       <span className="text-[8px] font-bold uppercase text-slate-400 dark:text-slate-500 mt-1">Mindful</span>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-center shadow-sm">
+                      <span className="block text-lg font-black text-rose-600 dark:text-rose-400">{weeklyStats.pillarCounts.social}</span>
+                      <span className="text-[8px] font-bold uppercase text-slate-400 dark:text-slate-500 mt-1">Sosial</span>
                     </div>
                   </div>
                 </div>
@@ -826,6 +870,7 @@ const Habits = () => {
                     <option value="cognitive">Kognitif (Belajar/Skill)</option>
                     <option value="vitality">Vitalitas (Fisik/Olahraga)</option>
                     <option value="mindfulness">Mindfulness (Mental)</option>
+                    <option value="social">Sosial (Relasi/Kolaborasi)</option>
                   </select>
                 </div>
               </div>
@@ -842,7 +887,15 @@ const Habits = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={() => setActiveDetailHabit(null)}></div>
           <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up border border-slate-200 dark:border-slate-700">
-            <div className={`p-5 md:p-6 pb-6 text-white shrink-0 ${activeDetailHabit.pillar === "cognitive" ? "bg-blue-600" : activeDetailHabit.pillar === "vitality" ? "bg-emerald-500" : "bg-amber-500"}`}>
+            <div className={`p-5 md:p-6 pb-6 text-white shrink-0 ${
+              activeDetailHabit.pillar === "cognitive"
+                ? "bg-blue-600"
+                : activeDetailHabit.pillar === "vitality"
+                  ? "bg-emerald-500"
+                  : activeDetailHabit.pillar === "social"
+                    ? "bg-rose-500"
+                    : "bg-amber-500"
+            }`}>
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl shadow-inner backdrop-blur-sm">{activeDetailHabit.icon}</div>

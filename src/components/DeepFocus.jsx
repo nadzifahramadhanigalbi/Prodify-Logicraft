@@ -35,6 +35,7 @@ const DeepFocus = () => {
 
   // Research Mode Tracker
   const researchTimerRef = useRef(null);
+  const researchBeepRef = useRef(null);
   const [isResearching, setIsResearching] = useState(false);
 
   const audioRef = useRef(null);
@@ -146,6 +147,10 @@ const DeepFocus = () => {
     setIsRunning(false);
     setShowWarning(false);
     setIsResearching(false);
+    if (researchBeepRef.current) {
+      clearTimeout(researchBeepRef.current);
+      researchBeepRef.current = null;
+    }
     setTreeState("dead");
     setStats((s) => ({ ...s, dead: s.dead + 1 }));
     if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
@@ -159,14 +164,45 @@ const DeepFocus = () => {
   // ========================================================
   // EXPERT TACTIC: RESEARCH MODE (Dispensasi 2 Menit & Jeda Manual)
   // ========================================================
+  const playShortBeep = useCallback(() => {
+    try {
+      const soundEnabled = appSettings.focusSounds !== false;
+      if (!soundEnabled || isMuted) return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 880;
+      g.gain.value = 0.0001;
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start();
+      const now = ctx.currentTime;
+      g.gain.exponentialRampToValueAtTime(0.2, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      o.stop(now + 0.13);
+      setTimeout(() => ctx.close().catch(() => { }), 180);
+    } catch {
+      // ignore
+    }
+  }, [appSettings.focusSounds, isMuted]);
+
   const triggerResearchMode = useCallback(() => {
     setIsResearching(true);
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => { });
     }
     if (researchTimerRef.current) clearTimeout(researchTimerRef.current);
+    if (researchBeepRef.current) clearTimeout(researchBeepRef.current);
 
     // Timer kematian pokok 2 Minit (120000ms) berjalan apabila berada di luar tab
+    // Beep warning 10 detik sebelum habis (110000ms).
+    researchBeepRef.current = setTimeout(() => {
+      playShortBeep();
+    }, 110000);
+
     researchTimerRef.current = setTimeout(() => {
       killTree();
 
@@ -184,13 +220,17 @@ const DeepFocus = () => {
       });
 
     }, 120000);
-  }, [killTree]);
+  }, [killTree, playShortBeep]);
 
   const resumeFromResearch = useCallback(() => {
     setIsResearching(false);
     if (researchTimerRef.current) {
       clearTimeout(researchTimerRef.current);
       researchTimerRef.current = null;
+    }
+    if (researchBeepRef.current) {
+      clearTimeout(researchBeepRef.current);
+      researchBeepRef.current = null;
     }
     if (appSettings.strictFocusMode !== false && fullscreenRef.current) {
       fullscreenRef.current.requestFullscreen().catch(() => { });
@@ -211,6 +251,10 @@ const DeepFocus = () => {
         if (researchTimerRef.current) {
           clearTimeout(researchTimerRef.current);
           researchTimerRef.current = null;
+        }
+        if (researchBeepRef.current) {
+          clearTimeout(researchBeepRef.current);
+          researchBeepRef.current = null;
         }
         // Nota Pakar: Kita TIDAK memanggil resumeFromResearch() di sini.
         // Dengan itu, skrin kekal kuning dan masa berhenti sehingga butang ditekan.

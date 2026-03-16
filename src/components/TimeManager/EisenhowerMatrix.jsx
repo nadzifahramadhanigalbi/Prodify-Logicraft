@@ -9,7 +9,8 @@ const EisenhowerMatrix = ({
   tasks,
   openScheduleModal,
   toggleTaskStatus,
-  deleteTask
+  deleteTask,
+  moveTaskToQuadrant,
 }) => {
   return (
     <div className="liquid-glass dark:bg-slate-900/60 dark:border-slate-700/50 p-6 lg:p-8 rounded-3xl spatial-shadow transition-colors">
@@ -66,11 +67,15 @@ const EisenhowerMatrix = ({
                               }}
                               className={`group bg-white/85 dark:bg-slate-800/85 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-slate-100/80 dark:border-slate-700/80 flex items-center gap-2 transition-shadow transition-colors ${snapshot.isDragging ? "shadow-xl ring-2 ring-indigo-400 relative" : "hover:shadow-md hover:-translate-y-0.5"}`}
                             >
-                              <div {...provided.dragHandleProps} className="text-slate-300 dark:text-slate-500 hover:text-slate-500 cursor-grab active:cursor-grabbing shrink-0">
+                              <div
+                                {...provided.dragHandleProps}
+                                className="text-slate-300 dark:text-slate-500 hover:text-slate-500 cursor-grab active:cursor-grabbing shrink-0 touch-none select-none"
+                                title="Seret untuk pindah kuadran"
+                              >
                                 <GripVertical className="w-4 h-4" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-semibold leading-tight ${task.completed ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-200"}`}>
+                                <p className={`text-sm font-semibold leading-tight break-words [overflow-wrap:anywhere] line-clamp-2 ${task.completed ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-200"}`}>
                                   {task.title}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -80,6 +85,17 @@ const EisenhowerMatrix = ({
                                   >
                                     <CalendarIcon className="w-3 h-3" /> Jadwalkan
                                   </button>
+                                  {/* Mobile fallback: no drag needed */}
+                                  <select
+                                    value={task.quadrant}
+                                    onChange={(e) => moveTaskToQuadrant?.(task.id, e.target.value)}
+                                    className="md:hidden text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200 bg-white/80 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-0.5 cursor-pointer"
+                                    title="Pindah kuadran (mobile)"
+                                  >
+                                    {quadrants.map((q) => (
+                                      <option key={q.id} value={q.id}>{q.title}</option>
+                                    ))}
+                                  </select>
                                   {task.tag === "Dari Catatan" && (
                                     <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
                                       <Sparkles className="w-3 h-3" /> Catatan

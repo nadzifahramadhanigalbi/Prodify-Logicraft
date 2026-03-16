@@ -634,19 +634,19 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
                 <div className="p-2.5 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl shadow-sm"><LayoutGrid className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /></div>
                 <div>
                   <h3 className="font-bold text-slate-800 dark:text-white text-base">Heatmap Aktivitas</h3>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Konsistensi 48 Hari Terakhir</p>
+                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">Konsistensi 48 Hari Terakhir</p>
                 </div>
               </div>
               <div className="text-right hidden md:block">
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Total Aktivitas</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-0.5">Total Aktivitas</p>
                 <p className="text-2xl font-black text-slate-800 dark:text-white leading-none">{heatmap.reduce((a, c) => a + c.count, 0)}</p>
               </div>
             </div>
 
             <div className="flex-1 flex flex-col justify-center">
-              <div className="grid grid-cols-12 gap-2 relative z-10 w-full max-w-2xl mx-auto">
+              <div className="grid grid-cols-7 md:grid-cols-12 gap-1 md:gap-2 relative z-10 w-full overflow-x-auto custom-scrollbar pb-2 md:max-w-2xl md:mx-auto">
                 {heatmap.map((item, i) => (
-                  <div key={i} className={`w-full aspect-square rounded-lg ${getHeatmapColor(item.intensity)} hover:ring-2 hover:ring-indigo-400 hover:scale-110 transition-all cursor-pointer shadow-sm`}
+                  <div key={i} className={`w-full aspect-square rounded-[6px] md:rounded-lg ${getHeatmapColor(item.intensity)} hover:ring-2 hover:ring-indigo-400 hover:scale-110 transition-all cursor-pointer shadow-sm`}
                     title={`${new Date(item.date + 'T00:00:00').toLocaleDateString('id-ID', { dateStyle: 'medium' })}: ${item.count} aktivitas`} />
                 ))}
               </div>
