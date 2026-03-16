@@ -20,7 +20,17 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'audio/*', 'lottie/*'],
+      includeAssets: [
+        'favicon.ico',
+        'favicon-16.png',
+        'favicon-32.png',
+        'apple-touch-icon.png',
+        'brand-logo.png',
+        'brand-logo-192.png',
+        'brand-logo-512.png',
+        'audio/*',
+        'lottie/*',
+      ],
       workbox: {
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
@@ -31,14 +41,22 @@ export default defineConfig({
         theme_color: '#4F46E5',
         icons: [
           {
-            src: 'https://ui-avatars.com/api/?name=SP&background=4F46E5&color=fff&size=192',
+            src: 'brand-logo-192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
-            src: 'https://ui-avatars.com/api/?name=SP&background=4F46E5&color=fff&size=512',
+            src: 'brand-logo-512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'brand-logo-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       }
