@@ -337,7 +337,7 @@ export default function LandingPage({ onStart }) {
           <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 text-center sm:text-left">
-                © {new Date().getFullYear()} Prodify. Dibuat dengan ❤️ untuk mahasiswa Indonesia.
+                © {new Date().getFullYear()} Prodify. All Righr Reserved by Logicraft.
               </p>
             </div>
           </div>
