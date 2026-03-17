@@ -265,21 +265,6 @@ export default function Settings({ onLogout }) {
                                     ))}
                                 </div>
                             </div>
-
-                            <div className="pt-5 border-t border-slate-100 dark:border-slate-800">
-                                <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Shortcut Penting</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {[
-                                        { k: 'Ctrl + Shift + B', v: 'Cognitive Guard (Breathing)' },
-                                        { k: 'Ctrl + Shift + D', v: 'Inject Demo Data (Landing)' },
-                                    ].map((it) => (
-                                        <div key={it.k} className="flex items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3">
-                                            <span className="text-xs font-black text-slate-700 dark:text-slate-200">{it.v}</span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded-lg whitespace-nowrap">{it.k}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
                     </div>
                     <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-700/60 p-6 md:p-8 shadow-sm transition-colors">
