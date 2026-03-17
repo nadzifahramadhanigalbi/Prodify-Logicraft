@@ -4,9 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================
-   GLOBAL BODY & TYPOGRAPHY
-   ============================================ */
 body {
   background-color: #F8FAFC;
   color: #1E293B;
@@ -15,9 +12,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ============================================
-   ACCESSIBILITY (Settings-driven)
-   ============================================ */
 html[data-font-scale="large"] { font-size: 112.5%; }
 html[data-font-scale="xlarge"] { font-size: 125%; }
 
@@ -29,10 +23,6 @@ html.reduce-motion *::after {
   transition-duration: 0.001ms !important;
   scroll-behavior: auto !important;
 }
-
-/* ============================================
-   CUSTOM SCROLLBAR (Elegant/Minimal)
-   ============================================ */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -51,11 +41,6 @@ html.reduce-motion *::after {
   background: #94A3B8;
 }
 
-/* ============================================
-   ANIMATION KEYFRAMES
-   ============================================ */
-
-/* Smooth floating animation for illustrations/mascots */
 @keyframes float {
 
   0%,
@@ -68,7 +53,6 @@ html.reduce-motion *::after {
   }
 }
 
-/* Gentle rotation for decorative rings */
 @keyframes spin-slow {
   from {
     transform: rotate(0deg);
@@ -78,8 +62,6 @@ html.reduce-motion *::after {
     transform: rotate(360deg);
   }
 }
-
-/* Glow pulse for active elements */
 @keyframes pulse-glow {
 
   0%,
@@ -92,7 +74,6 @@ html.reduce-motion *::after {
   }
 }
 
-/* Shimmer effect for skeleton/highlights */
 @keyframes shimmer {
   0% {
     background-position: -200% center;
@@ -103,7 +84,6 @@ html.reduce-motion *::after {
   }
 }
 
-/* Fade + slide up entrance */
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -116,7 +96,6 @@ html.reduce-motion *::after {
   }
 }
 
-/* Wiggle for playful attention elements */
 @keyframes wiggle {
 
   0%,
@@ -129,7 +108,6 @@ html.reduce-motion *::after {
   }
 }
 
-/* Confetti pieces */
 @keyframes confetti-fall {
   0% {
     transform: translateY(-10px) rotate(0deg);
@@ -142,7 +120,6 @@ html.reduce-motion *::after {
   }
 }
 
-/* Leaf drift for DeepFocus ambient particles */
 @keyframes drift {
   0% {
     transform: translate(0, 0) rotate(0deg);
@@ -160,7 +137,6 @@ html.reduce-motion *::after {
   }
 }
 
-/* Sparkle burst animation */
 @keyframes spark-burst {
   0% {
     transform: scale(0) rotate(0deg);
@@ -178,9 +154,6 @@ html.reduce-motion *::after {
   }
 }
 
-/* ============================================
-   ANIMATION UTILITY CLASSES
-   ============================================ */
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
@@ -215,11 +188,7 @@ html.reduce-motion *::after {
   animation: shimmer 2s infinite;
 }
 
-/* ============================================
-   TOUCH HOVER FIX (Prevent "sticky hover" on mobile)
-   ============================================ */
 @media (hover: none) {
-  /* Disable hover scale/translate transforms on touch devices while preserving other transforms (rotate/skew). */
   [class*="hover:scale"]:hover {
     --tw-scale-x: 1 !important;
     --tw-scale-y: 1 !important;
@@ -255,9 +224,6 @@ html.reduce-motion *::after {
   animation: confetti-fall 1.2s ease-out forwards;
 }
 
-/* ============================================
-   GLASSMORPHISM UTILITIES
-   ============================================ */
 .glass {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(16px);
@@ -272,9 +238,6 @@ html.reduce-motion *::after {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ============================================
-   PREMIUM TEXT GRADIENT
-   ============================================ */
 .text-gradient-indigo {
   background: linear-gradient(135deg, #4F46E5 0%, #818CF8 50%, #C084FC 100%);
   -webkit-background-clip: text;
@@ -282,9 +245,6 @@ html.reduce-motion *::after {
   background-clip: text;
 }
 
-/* ============================================
-   ZENOTES PROSE STYLES
-   ============================================ */
 .prose ul {
   list-style-type: disc !important;
   padding-left: 2rem !important;
@@ -325,7 +285,7 @@ html.reduce-motion *::after {
   margin-bottom: 1rem;
 }
 
-/* ZenNotes Empty Placeholder Styling */
+
 [contenteditable][data-placeholder]:empty::before {
   content: attr(data-placeholder);
   color: #94a3b8;
@@ -334,7 +294,6 @@ html.reduce-motion *::after {
   display: block;
 }
 
-/* Custom scrollbar for component-level containers */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -353,12 +312,6 @@ html.reduce-motion *::after {
   background: #94A3B8;
 }
 
-/* ============================================
-   🏆 JUARA DUNIA UI/UX UTILITIES 🏆
-   Inspired by Awwwards & UXDA Winners 
-   ============================================ */
-
-/* 1. Liquid Glass / Premium Glassmorphism */
 .liquid-glass {
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(24px) saturate(180%);
@@ -377,13 +330,11 @@ html.reduce-motion *::after {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
 }
 
-/* 2. Spatial 3D Shadows & Hover Tilt */
 .spatial-shadow {
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 10px 15px -3px rgba(0, 0, 0, 0.05),
     0 25px 50px -12px rgba(99, 102, 241, 0.15);
-  /* Tinted shadow */
 }
 
 .spatial-hover:hover {
@@ -394,7 +345,6 @@ html.reduce-motion *::after {
     0 30px 60px -15px rgba(99, 102, 241, 0.25);
 }
 
-/* Subtle 3D card tilt on hover */
 .hero-parallax {
   transform-style: preserve-3d;
   perspective: 1200px;
@@ -405,7 +355,6 @@ html.reduce-motion *::after {
   transform: rotateX(6deg) rotateY(-8deg) translateY(-4px);
 }
 
-/* 3. Animated AI-Style Gradients */
 @keyframes fluid-gradient {
   0% {
     background-position: 0% 50%;
@@ -435,7 +384,6 @@ html.reduce-motion *::after {
   position: absolute;
   inset: -2px;
   border-radius: inherit;
-  /* Softer palette so headers don't look "too neon" on light backgrounds */
   background: linear-gradient(-45deg, #6366F1, #38BDF8, #A78BFA);
   background-size: 300% 300%;
   animation: fluid-gradient 6s ease infinite;
@@ -450,7 +398,6 @@ html.reduce-motion *::after {
   filter: blur(6px);
 }
 
-/* 4. Hero 3D floating system */
 @keyframes hero-orbit-slow {
   0% {
     transform: rotate(0deg) translateY(0);
@@ -614,7 +561,6 @@ html.reduce-motion *::after {
   background: rgba(56, 189, 248, 0.9);
 }
 
-/* Magnetic Micro-interactions */
 .btn-magnetic {
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -623,9 +569,6 @@ html.reduce-motion *::after {
   transform: scale(0.95);
 }
 
-/* ============================================
-   FINDIT LANDING UTILITIES
-   ============================================ */
 @keyframes findit-marquee {
   0% {
     transform: translateX(0);
@@ -658,9 +601,6 @@ html.reduce-motion *::after {
   animation: findit-marquee 25s linear infinite;
 }
 
-/* =========================================================
-   3D FLOATING ANIMATIONS & GLASSMORPHISM ORBS (PRODIFY)
-   ========================================================= */
 @keyframes float-3d {
   0% { transform: translateY(0px) rotateX(0deg) rotateY(0deg); }
   50% { transform: translateY(-20px) rotateX(15deg) rotateY(-15deg); }
@@ -701,7 +641,6 @@ html.reduce-motion *::after {
   box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.05);
 }
 
-/* Perspective container for the main dashboard image */
 .perspective-container {
   perspective: 2000px;
 }
@@ -713,7 +652,6 @@ html.reduce-motion *::after {
   transform: rotateX(0deg) rotateY(0deg) translateY(-10px);
 }
 
-/* Nav click fade-in animation */
 @keyframes nav-fade-in {
   0% {
     opacity: 0.3;

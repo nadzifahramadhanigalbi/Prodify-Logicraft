@@ -38,7 +38,6 @@ const DeadlineTracker = ({
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Add Deadline Form */}
         <div className="w-full lg:w-80 shrink-0">
           <form
             onSubmit={handleAddDeadlineTask}
@@ -77,7 +76,6 @@ const DeadlineTracker = ({
           </form>
         </div>
 
-        {/* Task List */}
         <div className="flex-1 flex flex-col gap-3 max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
           {sortedDeadlineTasks.length === 0 ? (
             <div className="bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-12 text-center rounded-2xl flex flex-col items-center justify-center min-h-[250px]">

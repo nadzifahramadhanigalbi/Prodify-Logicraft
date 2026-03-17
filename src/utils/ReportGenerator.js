@@ -8,7 +8,6 @@ export const generateExecutiveReport = () => {
         return;
     }
 
-    // Define PDF formatting options
     const opt = {
         margin: 10,
         filename: `Prodify_Weekly_Report_${new Date().toISOString().split('T')[0]}.pdf`,
@@ -16,8 +15,5 @@ export const generateExecutiveReport = () => {
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-
-    // Temporarily add some print-specific classes or remove some UI elements if needed
-    // Here we just print the content straight
     html2pdf().set(opt).from(element).save();
 };

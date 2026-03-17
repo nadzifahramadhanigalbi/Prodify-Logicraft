@@ -9,7 +9,6 @@ export default function NekoGuide() {
   const [step, setStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Fungsi untuk mengecek progress dipisah menggunakan useCallback agar stabil
   const checkProgress = useCallback(() => {
     if (isDemoMode) {
       const savedStep = getJson('prodify_demo_guide_step_v1', 1) || 1;
@@ -22,7 +21,6 @@ export default function NekoGuide() {
       return;
     }
 
-    // Ambil data real-time menggunakan getJson yang aman (Hardening Level Senior)
     const notes = getJson('zen_pages_multi', []);
     const mTasks = getJson('matrix_tasks', []);
     const dTasks = getJson('prodify_tasks', []);
@@ -33,52 +31,43 @@ export default function NekoGuide() {
 
     let currentStep = 1;
 
-    // Misi 1: Bikin Catatan Pertama (Minimal 5 karakter)
     if (notes.length > 1 || (notes[0] && notes[0].content.length > 5)) {
       currentStep = 2;
     }
 
-    // Misi 2: Bikin Tugas di Task & Activity Manager
     if (currentStep === 2 && (mTasks.length > 0 || dTasks.length > 0)) {
       currentStep = 3;
     }
 
-    // Misi 3: Jadwalkan Tugas ke Kalender
     if (currentStep === 3 && Object.keys(timeBlocks).length > 0) {
       currentStep = 4;
     }
 
-    // Misi 4: Bikin Habit
     if (currentStep === 4 && habits.length > 0) {
       currentStep = 5;
     }
 
-    // Misi 5: Update Profile / Set Global Goal
     if (currentStep === 5 && (Object.keys(profile).length > 0 || goal)) {
       currentStep = 6;
     }
 
-    // Pastikan step tidak mundur (hanya maju)
     setStep(prev => (currentStep > prev ? currentStep : prev));
   }, [isDemoMode]);
 
   useEffect(() => {
-    // Cek jika user sudah menyelesaikan onboarding sebelumnya
     const isFinished = !isDemoMode && getJson('prodify_guide_finished', null);
     if (isFinished) return;
 
-    // Tunda kemunculan 1.5 detik agar animasi aplikasi selesai dulu
     const initTimer = setTimeout(() => {
       setIsVisible(true);
       if (isDemoMode) {
         setJson('prodify_demo_guide_step_v1', 1);
         setStep(1);
       } else {
-        checkProgress(); // Cek progress pertama kali saat Neko muncul
+        checkProgress();
       }
     }, 1500);
 
-    // MENGHAPUS BOM WAKTU PERFORMA: setInterval diganti dengan Event Listener!
     window.addEventListener('storage', checkProgress);
     window.addEventListener('prodify-sync', checkProgress);
 
@@ -99,11 +88,11 @@ export default function NekoGuide() {
   };
 
   const completeGuide = () => {
-    setStep(7); // Masuk ke state selebrasi (Purr-fect!)
+    setStep(7);
     setTimeout(() => {
       setJson('prodify_guide_finished', 'true');
       setIsVisible(false);
-    }, 5000); // Hilang sendiri setelah 5 detik
+    }, 5000);
   };
 
   const skipGuide = () => {
@@ -133,7 +122,6 @@ export default function NekoGuide() {
           exit={{ opacity: 0, y: 20, scale: 0.8 }}
           className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end pointer-events-none"
         >
-          {/* Bubble Chat */}
           <motion.div
             key={step}
             initial={{ opacity: 0, scale: 0.8, x: 20 }}
@@ -184,15 +172,11 @@ export default function NekoGuide() {
               </div>
             )}
 
-            {/* Segitiga panah chat */}
             <div className="absolute -bottom-3 right-10 w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[14px] border-t-white dark:border-t-slate-800 drop-shadow-md" />
           </motion.div>
 
-          {/* Neko Mascot (Ukurannya Dibesarkan dan Dimirror) */}
           <div className="mr-4 pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
-            {/* WRAPPER ANIMASI: Menangani naik-turun (float/bounce) */}
             <div className={step === 7 ? 'animate-bounce' : 'animate-float'}>
-              {/* WRAPPER MIRROR: Menangani rotasi menghadap kiri */}
               <div className="transform -scale-x-100">
                 <NekoMascotMini className="w-32 h-32 drop-shadow-2xl" />
               </div>

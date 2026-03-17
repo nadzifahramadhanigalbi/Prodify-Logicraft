@@ -1,20 +1,13 @@
-// src/components/TimeManager.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { DragDropContext } from "@hello-pangea/dnd";
-
-// SATUKAN SEMUA IMPORT ICON KE DALAM SATU BARIS INI:
 import {
   Plus, CheckCircle, Target, MoveRight, Layers, Clock, BellRing,
   AlertTriangle, AlertCircle, Trash2, Calendar, X, MapPin
 } from "lucide-react";
-
-// Import Komponen Anak yang sudah dipecah
 import DeadlineTracker from "./TimeManager/DeadlineTracker";
 import WeeklyCalendar from "./TimeManager/WeeklyCalendar";
 import EisenhowerMatrix from "./TimeManager/EisenhowerMatrix";
-
-// IMPORT STORAGE DAN CUSTOM HOOK LEVEL DEWA
 import { getJson, setJson } from '../utils/storage';
 import { useSynergyState } from '../hooks/useSynergyState';
 
@@ -85,19 +78,13 @@ const TimeManager = () => {
   const [taskToSchedule, setTaskToSchedule] = useState(null);
   const [scheduleTime, setScheduleTime] = useState("08:00");
   const [scheduleDate, setScheduleDate] = useState(getLocalDateKey());
-
-  // === STATE JADWAL AKADEMIK ===
   const [academicSchedule, setAcademicSchedule] = useState(() => getJson("prodify_academic_schedule", []));
   const [showAcademicModal, setShowAcademicModal] = useState(false);
   const [newClass, setNewClass] = useState({ dayOfWeek: 1, course: "", startTime: "08:00", endTime: "09:40", sks: 2, location: "" });
-
-  // PENGAMAN GLOBAL GOAL (HARDENING)
   const [globalGoal, setGlobalGoal] = useState(() => {
     return getJson("prodify_global_goal", "Ketik target IPK/Organisasimu semester ini...");
   });
   const [isEditingGoal, setIsEditingGoal] = useState(false);
-
-  // FUNGSI KHUSUS UNTUK MENYIMPAN GLOBAL GOAL DENGAN AMAN
   const saveGlobalGoal = (newGoal) => {
     setGlobalGoal(newGoal);
     setJson("prodify_global_goal", newGoal);
@@ -130,8 +117,6 @@ const TimeManager = () => {
       }
     };
   }, []);
-
-  // PERBAIKAN BUG INFINITE LOOP
   useEffect(() => {
     const syncSettings = () => setAppSettings(getJson("prodify_settings", {}));
     const handleStorage = (e) => {
@@ -146,8 +131,6 @@ const TimeManager = () => {
       window.removeEventListener("prodify-sync", handleStorage);
     };
   }, []);
-
-  // AUTO SAVES
   useEffect(() => { setJson("prodify_tasks", deadlineTasks); }, [deadlineTasks]);
   useEffect(() => { setJson("matrix_tasks", tasks); }, [tasks]);
   useEffect(() => { setJson("time_blocks", scheduledBlocks); }, [scheduledBlocks]);
@@ -178,14 +161,11 @@ const TimeManager = () => {
     const interval = setInterval(checkDeadlines, 30000);
     return () => clearInterval(interval);
   }, [deadlineTasks, appSettings, triggerNotification]);
-
-  // --- HANDLERS JADWAL AKADEMIK ---
   const handleAddClass = (e) => {
     e.preventDefault();
     if (!newClass.course.trim()) return;
     const addedClass = { ...newClass, id: createId(), dayOfWeek: parseInt(newClass.dayOfWeek, 10) };
     setAcademicSchedule([...academicSchedule, addedClass]);
-    // Reset state
     setNewClass({ dayOfWeek: 1, course: "", startTime: "08:00", endTime: "09:40", sks: 2, location: "" });
     showNotification("Mata Kuliah berhasil ditambahkan!");
   };
@@ -193,8 +173,6 @@ const TimeManager = () => {
   const removeClass = (id) => {
     setAcademicSchedule(academicSchedule.filter((c) => c.id !== id));
   };
-
-  // --- HANDLERS TUGAS ---
   const handleAddDeadlineTask = (e) => {
     e.preventDefault();
     if (!newDeadlineTask.trim() || !newDeadlineTime) return;
@@ -414,7 +392,6 @@ const TimeManager = () => {
                       <input type="time" required value={newClass.endTime} onChange={(e) => setNewClass({ ...newClass, endTime: e.target.value })} className="w-full bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-600 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-bold text-slate-800 dark:text-white [color-scheme:light] dark:[color-scheme:dark]" />
                     </div>
                   </div>
-                  {/* INPUT SKS & LOKASI */}
                   <div className="grid grid-cols-2 gap-4 sm:col-span-2 mt-1">
                     <div>
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Jumlah SKS</label>
@@ -473,13 +450,9 @@ const TimeManager = () => {
           </div>
         </div>
         , document.body)}
-
-      {/* MODAL TAMBAH AGENDA (DIUBAH MENJADI BISA DI-SCROLL & RAPI) */}
       {showAddModal && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-fade-in p-4">
           <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
-
-            {/* Header Modal - Menempel di atas (Fix) */}
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 shrink-0">
               <h3 className="font-black text-xl text-slate-800 dark:text-white flex items-center gap-2">
                 <Plus className="w-5 h-5 text-indigo-500" /> Buat Agenda Baru
@@ -488,11 +461,7 @@ const TimeManager = () => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-
-            {/* Form Container (Flex) */}
             <form onSubmit={handleAddTask} className="flex flex-col flex-1 overflow-hidden">
-
-              {/* Bagian Tengah yang Bisa Di-Scroll (overflow-y-auto) */}
               <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Nama Agenda / Tugas</label>
@@ -524,8 +493,6 @@ const TimeManager = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Footer Modal / Tombol Action - Menempel di bawah (Fix) */}
               <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 shrink-0 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer">Batal</button>
                 <button type="submit" className="px-5 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md transition-all flex items-center gap-2 cursor-pointer">Simpan <MoveRight className="w-4 h-4" /></button>

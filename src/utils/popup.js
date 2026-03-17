@@ -1,8 +1,3 @@
-// src/utils/popup.js
-//
-// Avoid native browser alert/confirm/prompt (the "localhost says" dialogs).
-// Components should call these helpers instead. PopupProvider will register the API at runtime.
-
 let popupApi = null;
 
 export function setPopupApi(nextApi) {
@@ -18,7 +13,6 @@ function normalizeText(input) {
 
 export function prodifyToast(message, opts = {}) {
   if (popupApi?.toast) return popupApi.toast(message, opts);
-  // Fallback: non-blocking.
   console.log('[Prodify Toast]', normalizeText(message));
 }
 
@@ -47,11 +41,8 @@ export function prodifyPrompt(opts) {
 }
 
 function fallbackDialog({ type, title, message, defaultValue = '', placeholder = '' }) {
-  // Pure DOM fallback (no native "localhost says" dialogs).
-  // This only runs if PopupProvider has not registered its API.
   try {
     if (typeof document === 'undefined') {
-      // Non-DOM environment: safest resolution.
       if (type === 'confirm') return Promise.resolve(false);
       if (type === 'prompt') return Promise.resolve(null);
       return Promise.resolve(true);
@@ -62,7 +53,7 @@ function fallbackDialog({ type, title, message, defaultValue = '', placeholder =
       overlay.style.position = 'fixed';
       overlay.style.inset = '0';
       overlay.style.zIndex = '2147483647';
-      overlay.style.background = 'rgba(15, 23, 42, 0.55)'; // slate-900/55
+      overlay.style.background = 'rgba(15, 23, 42, 0.55)';
       overlay.style.backdropFilter = 'blur(8px)';
       overlay.style.display = 'flex';
       overlay.style.alignItems = 'center';
@@ -75,10 +66,10 @@ function fallbackDialog({ type, title, message, defaultValue = '', placeholder =
       card.style.background = 'rgba(255, 255, 255, 0.96)';
       card.style.borderRadius = '20px';
       card.style.boxShadow = '0 30px 80px rgba(0,0,0,0.28)';
-      card.style.border = '1px solid rgba(148,163,184,0.35)'; // slate-400
+      card.style.border = '1px solid rgba(148,163,184,0.35)';
       card.style.padding = '18px';
       card.style.fontFamily = 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial';
-      card.style.color = '#0f172a'; // slate-900
+      card.style.color = '#0f172a';
 
       const h = document.createElement('div');
       h.textContent = title || (type === 'confirm' ? 'Konfirmasi' : 'Info');
@@ -91,7 +82,7 @@ function fallbackDialog({ type, title, message, defaultValue = '', placeholder =
       p.style.fontWeight = '600';
       p.style.fontSize = '13px';
       p.style.lineHeight = '1.45';
-      p.style.color = '#334155'; // slate-700
+      p.style.color = '#334155';
       p.style.whiteSpace = 'pre-wrap';
       p.style.wordBreak = 'break-word';
 
@@ -125,8 +116,8 @@ function fallbackDialog({ type, title, message, defaultValue = '', placeholder =
       btnCancel.style.padding = '10px 12px';
       btnCancel.style.borderRadius = '12px';
       btnCancel.style.border = '1px solid rgba(148,163,184,0.35)';
-      btnCancel.style.background = 'rgba(241,245,249,0.95)'; // slate-100
-      btnCancel.style.color = '#475569'; // slate-600
+      btnCancel.style.background = 'rgba(241,245,249,0.95)';
+      btnCancel.style.color = '#475569';
       btnCancel.style.fontWeight = '800';
       btnCancel.style.cursor = 'pointer';
 
@@ -136,7 +127,7 @@ function fallbackDialog({ type, title, message, defaultValue = '', placeholder =
       btnOk.style.flex = '1';
       btnOk.style.padding = '10px 12px';
       btnOk.style.borderRadius = '12px';
-      btnOk.style.border = '1px solid rgba(79,70,229,0.35)'; // indigo
+      btnOk.style.border = '1px solid rgba(79,70,229,0.35)';
       btnOk.style.background = 'rgba(79,70,229,0.92)';
       btnOk.style.color = '#ffffff';
       btnOk.style.fontWeight = '900';
@@ -184,7 +175,6 @@ function fallbackDialog({ type, title, message, defaultValue = '', placeholder =
       overlay.appendChild(card);
       document.body.appendChild(overlay);
 
-      // Focus input for prompt.
       if (type === 'prompt') {
         setTimeout(() => { try { input.focus(); input.select(); } catch { } }, 0);
       } else {

@@ -85,7 +85,6 @@ const EisenhowerMatrix = ({
                                   >
                                     <CalendarIcon className="w-3 h-3" /> Jadwalkan
                                   </button>
-                                  {/* Mobile fallback: no drag needed */}
                                   <select
                                     value={task.quadrant}
                                     onChange={(e) => moveTaskToQuadrant?.(task.id, e.target.value)}

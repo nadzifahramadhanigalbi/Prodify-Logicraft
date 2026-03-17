@@ -6,7 +6,6 @@ export const triggerDemoData = () => {
     const todayKey = d.toISOString().split('T')[0];
     const todayTime = d.getTime();
 
-    // Helper untuk format tanggal mundur
     const getPastDateStr = (daysAgo) => {
         const pd = new Date(d);
         pd.setDate(pd.getDate() - daysAgo);
@@ -38,7 +37,6 @@ export const triggerDemoData = () => {
         ]
     };
 
-    // Penuhi block 7 hari ke belakang agar Heatmap & Bar Chart aktif penuh
     for (let i = 1; i <= 7; i++) {
         const pdStr = getPastDateStr(i);
         sampleTimeBlocks[pdStr] = [
@@ -91,7 +89,6 @@ export const triggerDemoData = () => {
     const sampleGlobalGoal = 'Lulus Cumlaude 3.95 & Juara Nasional WDC 2026! 🚀🏆';
     const sampleProfileInfo = { name: 'Sobat Ambis', username: 'ambis_pro', university: 'Universitas Indonesia', major: 'Ilmu Komputer', semester: '5', targetIpk: '3.95', location: 'Indonesia', phone: '-', portfolio: 'github.com/ambispro', bio: 'Konsistensi adalah kunci. 1% lebih baik setiap harinya.' };
 
-    // SET TO SESSION STORAGE TO MOCK DATA JUST FOR THIS SESSION
     window.sessionStorage.setItem('isDemoMode', 'true');
     window.sessionStorage.setItem('prodify_hasSeenOnboarding', 'true');
     window.sessionStorage.setItem('prodify_user', JSON.stringify({ name: 'Sobat Ambis', email: 'ambis@prodify.com', token: 'demo-token' }));
@@ -112,11 +109,10 @@ export const triggerDemoData = () => {
     window.sessionStorage.setItem('prodify_login_streak', JSON.stringify({ lastLogin: todayKey, streak: 45 }));
     window.sessionStorage.setItem('prodify_radar_scores', JSON.stringify(sampleRadar));
     window.sessionStorage.setItem('forest_stats', JSON.stringify({ planted: 145, dead: 6 }));
-    window.sessionStorage.setItem(`forest_today_${todayKey}`, '4'); // 4 session focus today
+    window.sessionStorage.setItem(`forest_today_${todayKey}`, '4');
 
-    // Custom event to trigger reload/re-render across components (SPA intra-tab)
     dispatchProdifySync();
-    window.location.reload(); // Force full reload to apply demo mode purely over session storage 
+    window.location.reload(); 
 };
 
 export const clearDemoData = () => {

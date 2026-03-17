@@ -467,7 +467,7 @@ function App() {
             </button>
           </div>
         </header>
-        
+
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10 pb-32 relative scroll-smooth custom-scrollbar">
           <Suspense fallback={<PageLoader />}>
             <AnimatePresence mode="wait">
@@ -484,7 +484,6 @@ function App() {
           </Suspense>
         </div>
 
-        {/* Global Sticky Footer */}
         <footer className="absolute bottom-0 left-0 right-0 border-t border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl py-3 px-6 lg:px-10 z-20">
           <div className="flex flex-col md:flex-row items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 max-w-7xl mx-auto">
             <div>&copy; {new Date().getFullYear()} Pro<span className="text-indigo-600 dark:text-indigo-400">dify</span>. All rights reserved.</div>
@@ -545,8 +544,7 @@ function App() {
             </div>
           </div>
           , document.body)}
-
-        {/* Footer Policy Modals */}
+        
         {footerModal && createPortal(
           <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md animate-fade-in" onClick={() => setFooterModal(null)}>
             <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up flex flex-col max-h-[85vh] border border-white dark:border-slate-700 spatial-shadow" onClick={e => e.stopPropagation()}>
@@ -592,7 +590,6 @@ function App() {
           </div>
           , document.body)}
 
-        {/* MUNCULKAN NEKO GUIDE HANYA SETELAH ONBOARDING STATIS SELESAI */}
         {user && !showOnboarding && <NekoGuide />}
       </main>
     </div>

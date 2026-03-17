@@ -5,7 +5,7 @@ import {
   Play, Trees, Volume2, VolumeX, AlertTriangle, Sprout, Skull, X, Flame, Search, Brain
 } from "lucide-react";
 
-// IMPORT STORAGE TINGKAT DEWA
+
 import { dispatchProdifySync, getJson, setJson } from "../utils/storage";
 
 const DURATION_OPTIONS = [
@@ -32,7 +32,6 @@ const DeepFocus = () => {
   const skipPersistOnceRef = useRef(false);
   const brainDumpToastTimerRef = useRef(null);
 
-  // STATE UNTUK FALLBACK NOTIFICATION (Anti Notif Terblokir)
   const [inAppAlert, setInAppAlert] = useState(null);
   const [brainDumpToast, setBrainDumpToast] = useState(null);
   const [isBrainDumpOpen, setIsBrainDumpOpen] = useState(true);
@@ -45,7 +44,6 @@ const DeepFocus = () => {
     }
   });
 
-  // Research Mode Tracker
   const researchTimerRef = useRef(null);
   const researchBeepRef = useRef(null);
   const researchEndsAtRef = useRef(null);
@@ -58,7 +56,6 @@ const DeepFocus = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [preCountdown, setPreCountdown] = useState(null);
 
-  // MENGGUNAKAN getJson (Hardening Level Senior)
   const [appSettings, setAppSettings] = useState(() => getJson("prodify_settings", {}));
 
   useEffect(() => {
@@ -79,7 +76,6 @@ const DeepFocus = () => {
     audioRef.current.loop = true;
     audioRef.current.volume = 0.5;
 
-    // Meminta izin notifikasi OS browser
     if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
       Notification.requestPermission();
     }
@@ -93,7 +89,6 @@ const DeepFocus = () => {
   }, []);
 
   useEffect(() => {
-    // Debounced draft persistence without triggering global storage listeners.
     let t = null;
     try {
       t = setTimeout(() => {
@@ -141,20 +136,16 @@ const DeepFocus = () => {
     brainDumpToastTimerRef.current = setTimeout(() => setBrainDumpToast(null), 2200);
   }, []);
 
-  // MENGGUNAKAN getJson
   const [stats, setStats] = useState(() => getJson("forest_stats", { planted: 0, dead: 0 }));
 
   const [treeState, setTreeState] = useState("idle");
   const [showWarning, setShowWarning] = useState(false);
   const todayKey = `forest_today_${getLocalDateKey()}`;
 
-  // Menggunakan default string '0' agar aman saat di-parse
   const [todaySessions, setTodaySessions] = useState(() => parseInt(getJson(todayKey, '0')));
 
-  // MENGGUNAKAN setJson (Bukan setItem biasa)
   useEffect(() => { setJson("forest_stats", stats); }, [stats]);
 
-  // Persist session state so refresh does not reset the timer.
   const removePersistedSession = useCallback(() => {
     try {
       const isDemoMode = typeof window !== 'undefined' && window.sessionStorage.getItem('isDemoMode') === 'true';
@@ -174,7 +165,6 @@ const DeepFocus = () => {
     const clampedIdx = Math.min(Math.max(durIdx, 0), DURATION_OPTIONS.length - 1);
     const restoredTimeLeft = Math.max(0, parseInt(saved.timeLeft, 10) || 0);
 
-    // Restore only meaningful sessions (running or mid-state).
     if (saved.isRunning || (saved.treeState && saved.treeState !== 'idle')) {
       skipPersistOnceRef.current = true;
       setSelectedDuration(clampedIdx);
@@ -188,7 +178,6 @@ const DeepFocus = () => {
     } else {
       removePersistedSession();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -239,9 +228,6 @@ const DeepFocus = () => {
     }, 5000);
   }, [TOTAL_TIME, removePersistedSession]);
 
-  // ========================================================
-  // EXPERT TACTIC: RESEARCH MODE (Dispensasi 2 Menit & Jeda Manual)
-  // ========================================================
   const primeBeepAudio = useCallback(() => {
     try {
       const soundEnabled = appSettings.focusSounds !== false;
@@ -296,9 +282,6 @@ const DeepFocus = () => {
     }
     if (researchTimerRef.current) clearTimeout(researchTimerRef.current);
     if (researchBeepRef.current) clearTimeout(researchBeepRef.current);
-
-    // Timer kematian pokok 2 Minit (120000ms) berjalan apabila berada di luar tab
-    // Beep warning 10 detik sebelum habis (110000ms).
     researchBeepRef.current = setTimeout(() => {
       playShortBeep();
     }, 110000);
@@ -342,14 +325,11 @@ const DeepFocus = () => {
     if (appSettings.strictFocusMode === false) return undefined;
 
     const handleVisibilityChange = () => {
-      // Jika pengguna pindah tab, cetuskan Research Mode & mula pemasa kematian 2 minit
       if (document.hidden && isRunning && treeState === "growing") {
         triggerResearchMode();
       }
-      // Jika pengguna kembali ke tab, BATALKAN pemasa kematian, TETAPI BIARKAN MOD JEDA
-      // Mereka mesti klik "Lanjut Fokus" secara manual untuk menyambung masa
       else if (!document.hidden && isRunning && treeState === "growing" && isResearching) {
-        researchEndsAtRef.current = null; // pause countdown marker (timer dibatalkan)
+        researchEndsAtRef.current = null;
         if (researchTimerRef.current) {
           clearTimeout(researchTimerRef.current);
           researchTimerRef.current = null;
@@ -358,13 +338,10 @@ const DeepFocus = () => {
           clearTimeout(researchBeepRef.current);
           researchBeepRef.current = null;
         }
-        // Nota Pakar: Kita TIDAK memanggil resumeFromResearch() di sini.
-        // Dengan itu, skrin kekal kuning dan masa berhenti sehingga butang ditekan.
       }
     };
 
     const handleFullscreenChange = () => {
-      // Amaran HANYA muncul jika skrin dikecilkan secara paksa tanpa izin "Research Mode"
       if (!document.fullscreenElement && isRunning && treeState === "growing" && !showWarning && !document.hidden && !isResearching) {
         setShowWarning(true);
       }
@@ -442,7 +419,6 @@ const DeepFocus = () => {
     return () => clearInterval(interval);
   }, [isResearching]);
 
-  // Kawalan Audio
   useEffect(() => {
     const soundEnabled = appSettings.focusSounds !== false;
     const shouldPlay = soundEnabled && isRunning && !showWarning && treeState === "growing" && !isMuted && !isResearching;
@@ -451,10 +427,8 @@ const DeepFocus = () => {
     else audioRef.current.pause();
   }, [isRunning, showWarning, treeState, isMuted, appSettings, isResearching]);
 
-  // Kiraan Masa (Timer Tick)
   useEffect(() => {
     let interval;
-    // Masa dijeda (berhenti) sepenuhnya semasa isResearching aktif!
     if (isRunning && !showWarning && timeLeft > 0 && !isResearching) {
       interval = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     } else if (timeLeft === 0 && isRunning) {
@@ -464,12 +438,10 @@ const DeepFocus = () => {
 
       const newSessionCount = parseInt(getJson(todayKey, '0')) + 1;
 
-      // Untuk data sederhana (string angka), pakai localStorage biasa saja tidak masalah
       setJson(todayKey, String(newSessionCount));
 
       setTodaySessions(newSessionCount);
 
-      // Beritahu sukses via OS
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification("Panen Berhasil! 🌳", { body: "Sesi fokus selesai. Pohonmu tumbuh sempurna!" });
       }
@@ -484,7 +456,6 @@ const DeepFocus = () => {
     return () => clearInterval(interval);
   }, [isRunning, timeLeft, showWarning, TOTAL_TIME, isResearching, todayKey, removePersistedSession]);
 
-  // Pra-Kiraan (Pre-Countdown)
   useEffect(() => {
     let timer;
     if (preCountdown !== null) {
@@ -539,7 +510,7 @@ const DeepFocus = () => {
   const getAccentColor = () => {
     if (treeState === "dead") return "text-rose-500";
     if (treeState === "success") return "text-violet-400";
-    if (isResearching) return "text-amber-400"; // Warna kuning semasa riset
+    if (isResearching) return "text-amber-400";
     return "text-indigo-400";
   };
 
@@ -639,7 +610,6 @@ const DeepFocus = () => {
               </div>
             </>
           ) : treeState === "growing" ? (
-            /* BUTTON SEMASA SESI BERJALAN / DIJEDA */
             isResearching ? (
               <button onClick={resumeFromResearch} className="w-full max-w-sm py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-500 shadow-[0_0_30px_rgba(79,70,229,0.3)] cursor-pointer hover:-translate-y-1">
                 <Play className="w-5 h-5 fill-current" /> Lanjut Fokus
@@ -683,8 +653,6 @@ const DeepFocus = () => {
           </div>
         </div>
       )}
-
-      {/* FALLBACK IN-APP NOTIFICATION (ANTI JURI MATIKAN NOTIF OS) */}
       {inAppAlert && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-rose-600/95 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl z-[999] animate-bounce min-w-[300px] border border-rose-400 text-center">
           <h4 className="font-black text-lg mb-1">{inAppAlert.title}</h4>
@@ -698,7 +666,6 @@ const DeepFocus = () => {
         </div>
       )}
 
-      {/* ZEIGARNIK INTERCEPTOR: PARKIRAN DISTRAKSI */}
       {brainDumpToast && (
         <div className="fixed top-24 right-6 bg-emerald-600/90 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl z-[40] animate-fade-in-up border border-emerald-400/40">
           <p className="text-xs font-bold">{brainDumpToast}</p>

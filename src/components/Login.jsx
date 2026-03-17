@@ -43,11 +43,8 @@ export default function Login({ onLogin }) {
       university: cleaned.university || 'Belum diisi',
       targetIpk: cleaned.targetIpk || ''
     };
-
-    // Checklist WDC: simpan simulasi login frontend-only di localStorage sebagai `prodify_user`.
     setJson('prodify_user', user);
 
-    // Supaya halaman Profile langsung kebaca datanya tanpa null error.
     setJson('prodify_profileInfo', {
       name: user.name,
       username: cleaned.username,
@@ -74,7 +71,6 @@ export default function Login({ onLogin }) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col lg:flex-row bg-slate-50 relative overflow-x-hidden overflow-y-auto">
-      {/* LEFT PANEL: BRAND */}
       <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] relative bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 flex-col items-center justify-center p-10 overflow-hidden shrink-0">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-400/20 rounded-full blur-3xl pointer-events-none" />
@@ -123,7 +119,6 @@ export default function Login({ onLogin }) {
         </div>
       </div>
 
-      {/* RIGHT PANEL: FORM */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-12">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex flex-col items-center mb-6 animate-fade-in-up">

@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import { NekoMascotMini, NekoMascotFull } from './NekoMascot';
 
-// IMPORT STORAGE AMAN
 import { getJson, setJson } from '../utils/storage';
 
 const formatDateStr = (dateObj) => {
@@ -39,9 +38,6 @@ const Habits = () => {
   const [showWeeklyReport, setShowWeeklyReport] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
 
-  // ==============================================================================
-  // DOSA 4 DISELESAIKAN: AUTO-VALIDATION STREAK KETIKA HALAMAN DIMUAT
-  // ==============================================================================
   useEffect(() => {
     let isModified = false;
     const todayKey = formatDateStr(new Date());
@@ -50,14 +46,12 @@ const Habits = () => {
       let currentStreak = 0;
       let checkDate = new Date();
 
-      // Hitung mundur ke belakang untuk memvalidasi streak aktual hari ini
       while (true) {
         const dKey = formatDateStr(checkDate);
         if ((h.history?.[dKey] || 0) >= h.targetCount) {
           currentStreak++;
           checkDate.setDate(checkDate.getDate() - 1);
         } else {
-          // Beri toleransi jika hari ini belum selesai, tapi H-1 selesai
           if (dKey === todayKey && currentStreak === 0) {
             checkDate.setDate(checkDate.getDate() - 1);
             const yKey = formatDateStr(checkDate);
@@ -67,11 +61,10 @@ const Habits = () => {
               continue;
             }
           }
-          break; // Streak benar-benar putus!
+          break;
         }
       }
 
-      // Jika streak yang dihitung berbeda dengan data lama, maka update
       if (h.streak !== currentStreak) {
         isModified = true;
         return { ...h, streak: currentStreak };
@@ -79,12 +72,10 @@ const Habits = () => {
       return h;
     });
 
-    // Simpan hanya jika ada habit yang streak-nya hangus/berubah
     if (isModified) {
       setHabits(updatedHabits);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Hanya berjalan SATU KALI saat komponen mount
+    }s
+  }, []);
 
 
   // 2. Gunakan setJson agar aman dan sinkron
@@ -175,66 +166,42 @@ const Habits = () => {
   const weekKey = `${weeklyStats.dailyCompletion[0].dateStr}_to_${weeklyStats.dailyCompletion[6].dateStr}`;
 
   const POPULAR_ROUTINES = [
-    // --- UMUM & KESEHATAN (Mahasiswa Umum) ---
     { id: "pr_u1", icon: "🌅", title: "Bangun Pagi Konsisten", pillar: "vitality", target: 1, desc: "Bangun jam 5 pagi tanpa snooze" },
     { id: "pr_u2", icon: "💧", title: "Hidrasi Penuh", pillar: "vitality", target: 8, desc: "Minum 8 gelas air / hari" },
     { id: "pr_u3", icon: "🧠", title: "Review Flashcard Belajar", pillar: "cognitive", target: 3, desc: "Sesi spaced repetition materi kelas" },
     { id: "pr_u4", icon: "🧘", title: "Meditasi Pagi", pillar: "mindfulness", target: 1, desc: "Duduk tenang 5 menit sebelum ngampus" },
-
     { id: "pr_u5", icon: "🤝", title: "Check-in Teman Kelas", pillar: "social", target: 1, desc: "Tanya kabar & sync tugas kelompok 5 menit" },
     { id: "pr_u6", icon: "👥", title: "Diskusi Kelompok Ringan", pillar: "social", target: 1, desc: "Ngobrol 10 menit untuk pecah kebuntuan tugas" },
-
-    // --- ANAK IT / ILKOM ---
     { id: "pr_it1", icon: "💻", title: "Latihan Ngoding (Leet)", pillar: "cognitive", target: 1, desc: "Kerjakan 1 algoritma untuk asah logika" },
     { id: "pr_it2", icon: "🚀", title: "EksplorTech Stack", pillar: "cognitive", target: 1, desc: "Baca dokumentasi framework baru 15 menit" },
-
-    // --- ANAK KESENIAN ---
     { id: "pr_art1", icon: "🎨", title: "Sketsa / Doodling", pillar: "cognitive", target: 1, desc: "Latihan gambar 1 sketsa anatomi / observasi" },
     { id: "pr_art2", icon: "🎵", title: "Latihan Instrumen/Vokal", pillar: "cognitive", target: 1, desc: "Main tangga nada / pemanasan vokal 30 menit" },
     { id: "pr_art3", icon: "🕺", title: "Pemanasan Koreografi", pillar: "vitality", target: 1, desc: "Stretching & recall koreografi 15 menit" },
     { id: "pr_art4", icon: "🎭", title: "Cari Referensi Karya", pillar: "mindfulness", target: 1, desc: "Kumpulkan inspirasi visual/audio tanpa distraksi" },
-
-    // --- ANAK EKONOMI & BISNIS ---
     { id: "pr_eco1", icon: "📈", title: "Update Berita Ekonomi/Pasar", pillar: "cognitive", target: 1, desc: "Baca berita makro/saham pagi hari (CNBC, dll)" },
     { id: "pr_eco2", icon: "🧮", title: "Bedah Studi Kasus Bisnis", pillar: "cognitive", target: 1, desc: "Analisis laporan keuangan / strategi 1 brand" },
     { id: "pr_eco3", icon: "💡", title: "Brainstorming Ide Usaha", pillar: "cognitive", target: 1, desc: "Tulis 5 ide pain-point & draf solusi bisnis" },
-
-    // --- ANAK PENDIDIKAN / KEGURUAN ---
     { id: "pr_edu1", icon: "📝", title: "Rancang Lesson Plan", pillar: "cognitive", target: 1, desc: "Buat 1 draf RPP / alat peraga ajar interaktif" },
     { id: "pr_edu2", icon: "🗣️", title: "Latihan Microteaching", pillar: "cognitive", target: 1, desc: "Latihan intonasi & presentasi kelas depan kaca" },
     { id: "pr_edu3", icon: "📚", title: "Review Jurnal Pedagogi", pillar: "cognitive", target: 1, desc: "Baca 1 artikel metode/psikologi pendidikan anak" },
-
-    // --- ANAK KEOLAHRAGAAN (FIK) ---
     { id: "pr_sport1", icon: "🏃‍♂️", title: "Latihan Fisik Inti", pillar: "vitality", target: 1, desc: "Workout 45 menit untuk maintenance kebugaran" },
     { id: "pr_sport2", icon: "💪", title: "Stretching Khusus", pillar: "vitality", target: 2, desc: "Peregangan otot preventif cedera sesudah latihan" },
     { id: "pr_sport3", icon: "🥗", title: "Cek Kalori & Makro Nutrisi", pillar: "vitality", target: 1, desc: "Catat asupan protein presisi agar target tercapai" },
     { id: "pr_sport4", icon: "🧊", title: "Cold Exposure / Recovery", pillar: "vitality", target: 1, desc: "Mandi es/air dingin untuk meredakan inflamasi otot" },
-
-    // --- ANAK TEKNIK ---
     { id: "pr_eng1", icon: "📐", title: "Latihan Kalkulus/Fisika", pillar: "cognitive", target: 1, desc: "Selesaikan 2 soal hitungan mekanika/arus numerik" },
     { id: "pr_eng2", icon: "🏗️", title: "Eksplor Software CAD/BIM", pillar: "cognitive", target: 1, desc: "Latihan tool set di AutoCAD, SolidWorks, Revit, dll" },
     { id: "pr_eng3", icon: "🔌", title: "Oprek Mikrokontroler", pillar: "cognitive", target: 1, desc: "Simulasi Arduino/Proteus atau solder mini project" },
-
-    // --- ANAK HUKUM ---
     { id: "pr_law1", icon: "⚖️", title: "Bedah Ratio Decidendi", pillar: "cognitive", target: 1, desc: "Analisis landasan hukum dari 1 putusan pengadilan" },
     { id: "pr_law2", icon: "辩", title: "Latihan Legal Drafting", pillar: "cognitive", target: 1, desc: "Susun kerangka argumen legal standing isu terkini" },
     { id: "pr_law3", icon: "📖", title: "Hafalan Pasal Krusial", pillar: "cognitive", target: 2, desc: "Review mendalam 5 pasal penting (KUHPer, KUHP, dll)" },
-
-    // --- ANAK FISIP ---
     { id: "pr_soc1", icon: "📰", title: "Analisis Isu Geopolitik", pillar: "cognitive", target: 1, desc: "Kritis bedah 1 artikel opini kebijakan publik/global" },
     { id: "pr_soc2", icon: "✍️", title: "Latihan Menulis Opini", pillar: "cognitive", target: 1, desc: "Drafting 300 kata tanggapan fenomena komunikasi/sosial" },
     { id: "pr_soc3", icon: "🗣️", title: "Praktik Negosiasi", pillar: "cognitive", target: 1, desc: "Simulasi roleplay Model UN (MUN) atau argumen kelompok" },
-
-    // --- ANAK FMIPA ---
     { id: "pr_sci1", icon: "🔬", title: "Review Teorema", pillar: "cognitive", target: 1, desc: "Tulis & buktikan ulang 1 rumus sakti / jalur metabolisme" },
     { id: "pr_sci2", icon: "🧪", title: "Bedah Jurnal Sains", pillar: "cognitive", target: 1, desc: "Analisis setup eksperimen & hasil dari 1 paper riset Q1" },
     { id: "pr_sci3", icon: "📊", title: "Latihan Olah Data", pillar: "cognitive", target: 1, desc: "Visualisasi dataset eksperimen menggunakan R / Python / SPSS" },
-
-    // --- ANAK KESEHATAN ---
     { id: "pr_med1", icon: "⚕️", title: "Review Anatomi", pillar: "cognitive", target: 2, desc: "Hafalkan sistem jaringan, letak tulang / list dosis obat" },
     { id: "pr_med2", icon: "🩺", title: "Simulasi Anamnesis Kasus", pillar: "cognitive", target: 1, desc: "Baca, diagnosis, & buat timeline dari 1 clinical case" },
-
-    // --- MINDFULNESS & ME-TIME ---
     { id: "pr_mind1", icon: "📓", title: "Gratitude Journaling", pillar: "mindfulness", target: 1, desc: "Tulis 3 pencapaian kecil & hal yang membuatmu tersenyum" },
     { id: "pr_mind2", icon: "📵", title: "Digital Detox Malam", pillar: "mindfulness", target: 1, desc: "1 jam sebelum tidur stop scrolling medsos" },
     { id: "pr_mind3", icon: "☕", title: "Savoring Pagi Hari", pillar: "mindfulness", target: 1, desc: "Nikmati perlahan hangatnya sarapan tanpa pegang HP" },
@@ -353,7 +320,6 @@ const Habits = () => {
     completedToday.map((h) => (allowedPillars.has(h.pillar) ? h.pillar : "cognitive"))
   ).size;
   const constellationReady = completedPillarCount >= 4;
-  // Progress card shows when user has habits; "Terhubung" requires 4 unique pillars completed today.
   const showConstellation = habits.length > 0;
 
   const renderHabitItem = (habit) => {
@@ -667,7 +633,6 @@ const Habits = () => {
         </div>
       </div>
 
-      {/* MODAL LAPORAN EVALUASI MINGGUAN (DENGAN ARSIP) */}
       {showWeeklyReport && createPortal(
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 animate-fade-in bg-slate-900/60 backdrop-blur-md">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] md:max-h-[85vh] flex flex-col animate-fade-in-up border border-slate-200 dark:border-slate-700 overflow-hidden relative">
@@ -788,7 +753,6 @@ const Habits = () => {
         </div>
         , document.body)}
 
-      {/* OTHER MODALS */}
       {confirmDeleteId && createPortal(
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 animate-fade-in bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar animate-fade-in-up border border-slate-200 dark:border-slate-700 text-center p-6 md:p-8">

@@ -4,8 +4,6 @@ import {
     Bell, Shield, Monitor, LogOut, Check, Trash2, X, AlertTriangle,
     Download, Upload, Zap, BookOpen, Clock, FileJson, Brain, Eye
 } from 'lucide-react';
-
-// Import helper storage aman
 import { dispatchProdifySync, getJson, setJson } from '../utils/storage';
 import { prodifyAlert, prodifyToast } from '../utils/popup';
 
@@ -15,14 +13,14 @@ export default function Settings({ onLogout }) {
             darkMode: false,
             dashboardZenMode: false,
             reducedMotion: false,
-            fontScale: 'normal', // normal | large | xlarge
+            fontScale: 'normal',
             notifications: true,
-            urgentReminders: true,    // Deadline < 2 Jam
-            habitReminders: true,     // Habit harian
-            focusSounds: true,        // Suara alarm Deep Focus
-            strictFocusMode: true,    // Anti-tab out Deep Focus
-            autoSaveNotes: true,      // ZenNotes
-            autoCognitiveGuard: false // DITAMBAHKAN: Auto Cognitive Guard (Default False)
+            urgentReminders: true,
+            habitReminders: true,
+            focusSounds: true,
+            strictFocusMode: true,
+            autoSaveNotes: true,
+            autoCognitiveGuard: false
         };
         const saved = getJson('prodify_settings', null);
         return saved ? { ...defaults, ...saved } : defaults;
@@ -42,10 +40,7 @@ export default function Settings({ onLogout }) {
         return raw.trim().toLowerCase().replace(/\s+/g, '');
     })();
 
-    // Menghitung estimasi penggunaan LocalStorage secara Real-Time
     const calculateStorage = () => {
-        // localStorage itu per-origin. Di localhost, beberapa project bisa berbagi origin yang sama.
-        // Jadi hitung hanya key milik aplikasi (prefix Prodify).
         const prefixes = ['prodify_', 'zen_', 'matrix_', 'forest_', 'time_blocks'];
         let totalBytes = 0;
 
@@ -53,10 +48,10 @@ export default function Settings({ onLogout }) {
             if (!Object.prototype.hasOwnProperty.call(localStorage, key)) continue;
             if (!prefixes.some((p) => key.startsWith(p))) continue;
             const value = localStorage.getItem(key) || '';
-            totalBytes += ((value.length + key.length) * 2); // UTF-16 (2 bytes per char)
+            totalBytes += ((value.length + key.length) * 2);
         }
 
-        return totalBytes / 1024 / 1024; // MB
+        return totalBytes / 1024 / 1024;
     };
 
     const usedStorageMB = calculateStorage();
@@ -68,8 +63,6 @@ export default function Settings({ onLogout }) {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
         setJson('prodify_settings', newSettings);
-
-        // TRIGGER GLOBAL DARK MODE
         if (key === 'darkMode') {
             if (newSettings.darkMode) {
                 document.documentElement.classList.add('dark');
@@ -97,7 +90,6 @@ export default function Settings({ onLogout }) {
         );
     };
 
-    // FITUR EKSPOR DATA LOKAL UTUH (BACKUP)
     const handleExportData = () => {
         try {
             const storageOptions = typeof window !== 'undefined' && window.sessionStorage.getItem('isDemoMode') === 'true' ? window.sessionStorage : localStorage;
@@ -109,7 +101,7 @@ export default function Settings({ onLogout }) {
                 try {
                     data[key] = JSON.parse(val);
                 } catch {
-                    data[key] = val; // Fallback untuk string murni
+                    data[key] = val;
                 }
             });
 
@@ -123,7 +115,6 @@ export default function Settings({ onLogout }) {
                 data,
             };
 
-            // Export file JSON (Blob lebih aman daripada data: URL untuk file besar)
             const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
 
@@ -142,7 +133,6 @@ export default function Settings({ onLogout }) {
         }
     };
 
-    // FITUR IMPOR DATA LOKAL UTUH (RESTORE)
     const handleImportData = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -154,7 +144,6 @@ export default function Settings({ onLogout }) {
                 const importedData = parsed?.data && typeof parsed.data === 'object' ? parsed.data : parsed;
                 const storageOptions = typeof window !== 'undefined' && window.sessionStorage.getItem('isDemoMode') === 'true' ? window.sessionStorage : localStorage;
 
-                // Bersihkan hanya key milik Prodify, lalu restore dari file (menghindari injeksi key asing).
                 Object.keys(storageOptions).forEach((key) => {
                     if (isProdifyKey(key)) storageOptions.removeItem(key);
                 });
@@ -166,7 +155,7 @@ export default function Settings({ onLogout }) {
                 });
                 dispatchProdifySync();
                 showNotification("Data berhasil dipulihkan! Memuat ulang...");
-                setTimeout(() => window.location.reload(), 1500); // Reload agar seluruh state merender ulang
+                setTimeout(() => window.location.reload(), 1500);
             } catch {
                 prodifyAlert({ title: 'Impor Gagal', message: 'File backup tidak valid atau rusak.' });
             }
@@ -175,7 +164,6 @@ export default function Settings({ onLogout }) {
     };
 
     const handleClearLocalData = () => {
-        // Hapus data fungsional dari Storage yang aktif (Bisa jadi Session di Demo)
         const storageOptions = typeof window !== 'undefined' && window.sessionStorage.getItem('isDemoMode') === 'true' ? window.sessionStorage : localStorage;
         storageOptions.removeItem('prodify_tasks');
         storageOptions.removeItem('matrix_tasks');
@@ -188,10 +176,7 @@ export default function Settings({ onLogout }) {
         setTimeout(() => setSavedMessage(''), 3000);
         dispatchProdifySync();
     };
-
-    // HARD RESET / HAPUS AKUN TOTAL
     const handleDeleteAccount = () => {
-        // Modal yang membuka tombol ini sudah merupakan konfirmasi eksplisit.
         const storageOptions = typeof window !== 'undefined' && window.sessionStorage.getItem('isDemoMode') === 'true' ? window.sessionStorage : localStorage;
         Object.keys(storageOptions).forEach(key => {
             if (key.startsWith('prodify_') || key.startsWith('zen_') || key.startsWith('matrix_') || key.startsWith('time_') || key.startsWith('forest_')) {
@@ -207,7 +192,6 @@ export default function Settings({ onLogout }) {
 
     return (
         <div className="flex flex-col gap-6 animate-fade-in-up pb-20 lg:pb-8 max-w-5xl mx-auto">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-6 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm transition-colors gap-4">
                 <div>
                     <h2 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white transition-colors">Pengaturan Sistem</h2>
@@ -222,9 +206,7 @@ export default function Settings({ onLogout }) {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                {/* Kiri: Preferensi Fitur */}
                 <div className="space-y-6">
-                    {/* Tampilan Visual */}
                     <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-700/60 p-6 md:p-8 shadow-sm transition-colors">
                         <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
                             <div className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl"><Monitor className="w-5 h-5" /></div>
@@ -246,8 +228,6 @@ export default function Settings({ onLogout }) {
                             <Toggle isOn={!!settings.dashboardZenMode} onClick={() => handleToggle('dashboardZenMode')} />
                         </div>
                     </div>
-
-                    {/* Aksesibilitas & Tweaks */}
                     <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-700/60 p-6 md:p-8 shadow-sm transition-colors">
                         <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
                             <div className="p-2.5 bg-teal-50 dark:bg-teal-500/10 text-teal-600 rounded-xl"><Shield className="w-5 h-5" /></div>
@@ -302,8 +282,6 @@ export default function Settings({ onLogout }) {
                             </div>
                         </div>
                     </div>
-
-                    {/* Konfigurasi Fitur Aplikasi */}
                     <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-700/60 p-6 md:p-8 shadow-sm transition-colors">
                         <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
                             <div className="p-2.5 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-xl"><Zap className="w-5 h-5" /></div>
@@ -311,7 +289,6 @@ export default function Settings({ onLogout }) {
                         </div>
 
                         <div className="space-y-6">
-                            {/* DITAMBAHKAN: Auto Cognitive Guard */}
                             <div className="flex items-center justify-between">
                                 <div className="pr-4">
                                     <p className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5"><Brain className="w-3.5 h-3.5 text-teal-500" /> Auto-Cognitive Guard</p>
@@ -319,8 +296,6 @@ export default function Settings({ onLogout }) {
                                 </div>
                                 <Toggle isOn={settings.autoCognitiveGuard} onClick={() => handleToggle('autoCognitiveGuard')} />
                             </div>
-
-                            {/* Notifikasi Global */}
                             <div className="flex items-center justify-between">
                                 <div className="pr-4">
                                     <p className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5"><Bell className="w-3.5 h-3.5 text-slate-400" /> Notifikasi Cerdas</p>
@@ -328,8 +303,6 @@ export default function Settings({ onLogout }) {
                                 </div>
                                 <Toggle isOn={settings.notifications} onClick={() => handleToggle('notifications')} />
                             </div>
-
-                            {/* Pengingat Deadline */}
                             <div className="flex items-center justify-between">
                                 <div className="pr-4">
                                     <p className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-rose-400" /> Peringatan Deadline Kritis</p>
@@ -337,8 +310,6 @@ export default function Settings({ onLogout }) {
                                 </div>
                                 <Toggle isOn={settings.urgentReminders} onClick={() => handleToggle('urgentReminders')} disabled={!settings.notifications} />
                             </div>
-
-                            {/* Deep Focus Strict Mode */}
                             <div className="flex items-center justify-between">
                                 <div className="pr-4">
                                     <p className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-purple-400" /> Mode Fokus Ketat</p>
@@ -346,8 +317,6 @@ export default function Settings({ onLogout }) {
                                 </div>
                                 <Toggle isOn={settings.strictFocusMode} onClick={() => handleToggle('strictFocusMode')} />
                             </div>
-
-                            {/* Auto Save Notes */}
                             <div className="flex items-center justify-between">
                                 <div className="pr-4">
                                     <p className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5 text-emerald-400" /> Auto-Save ZenNotes</p>
@@ -359,9 +328,7 @@ export default function Settings({ onLogout }) {
                     </div>
                 </div>
 
-                {/* Kanan: Manajemen Data (FAQ Dihapus) */}
                 <div className="space-y-6">
-                    {/* Backup & Restore Data */}
                     <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-700/60 p-6 md:p-8 shadow-sm transition-colors h-full flex flex-col">
                         <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6 shrink-0">
                             <div className="p-2.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-xl"><FileJson className="w-5 h-5" /></div>
@@ -383,7 +350,6 @@ export default function Settings({ onLogout }) {
                                 </button>
                             </div>
 
-                            {/* BAGIAN PROGRESS BAR KAPASITAS YANG DIUPDATE */}
                             <div className="pb-6 border-b border-slate-100 dark:border-slate-800">
                                 <div className="flex justify-between items-end mb-2">
                                     <p className="text-sm font-bold text-slate-800 dark:text-white">Kapasitas Penyimpanan Lokal</p>
@@ -413,8 +379,6 @@ export default function Settings({ onLogout }) {
                 </div>
 
             </div>
-
-            {/* DANGER ZONE (FULL WIDTH) */}
             <div className="bg-gradient-to-r from-rose-50 to-white dark:from-rose-950/30 dark:to-slate-900 rounded-[2rem] border border-rose-200 dark:border-rose-900/50 p-6 md:p-8 shadow-sm transition-colors mt-2">
                 <h4 className="text-xs font-black text-rose-600 dark:text-rose-500 uppercase tracking-widest mb-6 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" /> Zona Berbahaya
@@ -443,7 +407,6 @@ export default function Settings({ onLogout }) {
                 </div>
             </div>
 
-            {/* MODAL KONFIRMASI HAPUS AKUN */}
             {showDeleteModal && createPortal(
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-700 rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-fade-in-up text-center p-8 relative">

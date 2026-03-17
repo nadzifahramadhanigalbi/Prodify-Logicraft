@@ -10,7 +10,7 @@ const getPortalRoot = () => {
 
 export default function PopupProvider({ children }) {
   const [toasts, setToasts] = React.useState([]);
-  const [dialog, setDialog] = React.useState(null); // { type, title, message, ... }
+  const [dialog, setDialog] = React.useState(null);
   const [promptValue, setPromptValue] = React.useState('');
   const resolverRef = React.useRef(null);
 
@@ -70,7 +70,6 @@ export default function PopupProvider({ children }) {
     });
   }, []);
 
-  // Register API for non-react modules (utils) and legacy calls.
   React.useEffect(() => {
     const api = { toast, alert, confirm, prompt };
     setPopupApi(api);
@@ -96,7 +95,6 @@ export default function PopupProvider({ children }) {
 
       {portalRoot && createPortal(
         <>
-          {/* Toast stack */}
           <div className="fixed bottom-6 right-6 z-[10000] flex flex-col gap-2 pointer-events-none">
             {toasts.map((t) => (
               <div
@@ -114,7 +112,6 @@ export default function PopupProvider({ children }) {
             ))}
           </div>
 
-          {/* Dialog */}
           {dialog && (
             <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-slate-900/55 backdrop-blur-sm">
               <div

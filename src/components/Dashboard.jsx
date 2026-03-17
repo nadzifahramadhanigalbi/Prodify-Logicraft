@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 import { Radar, Bar } from 'react-chartjs-2';
@@ -10,8 +10,6 @@ import {
 } from 'lucide-react';
 import { generateExecutiveReport } from '../utils/ReportGenerator';
 import { NekoMascotMini, NekoMascotFull } from './NekoMascot';
-
-// IMPORT STORAGE DAN CUSTOM HOOK LEVEL DEWA
 import { getJson, setJson } from '../utils/storage';
 import { useSynergyState } from '../hooks/useSynergyState';
 
@@ -130,7 +128,6 @@ const QUOTES = [
 ];
 
 const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
-  // MENGGUNAKAN CUSTOM HOOKS BARU
   const { energyCoins } = useSynergyState();
 
   const [zenDashboardMode, setZenDashboardMode] = useState(() => {
@@ -153,25 +150,17 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
   const radarChartRef = useRef(null);
   const barChartRef = useRef(null);
   const syncDebounceRef = useRef(null);
-
-  // Evaluation
   const [evaluationState, setEvaluationState] = useState('idle');
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [scores, setScores] = useState(() => getJson('prodify_radar_scores', { akademik: 50, organisasi: 50, istirahat: 50, sosial: 50, tugas: 50 }));
   const [insightText, setInsightText] = useState('');
   const [finalInsight, setFinalInsight] = useState('');
-
-  // Heatmap
   const [heatmap, setHeatmap] = useState(() => Array.from({ length: 48 }, (_, i) => ({
     id: i, date: formatDateStr(new Date(new Date().setDate(new Date().getDate() - (47 - i)))), active: false, intensity: 0, count: 0
   })));
 
-  // =========================================================
-  // DOSA 3 DISELESAIKAN: ANTI NULL POINTER EXCEPTION
-  // =========================================================
   const userObj = getJson('prodify_user', { name: 'Mahasiswa' });
   const userName = userObj?.name || 'Mahasiswa';
-  // =========================================================
 
   const [customQuote, setCustomQuote] = useState(() => getJson('prodify_custom_quote', ''));
   const [useCustomQuote, setUseCustomQuote] = useState(() => getJson('prodify_use_custom_quote', false));
@@ -217,7 +206,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
     const activeDeadlines = deadlineTasks.filter(t => !t.completed && new Date(t.deadline) > new Date()).length;
     setActiveDeadlineCount(activeDeadlines);
 
-    // KALKULASI PROGRESS PROJECT/SKRIPSI
     const allTasks = [...deadlineTasks, ...matrixTasks];
     const pTasks = allTasks.filter(t => t.category === 'project');
     const completedPTasks = pTasks.filter(t => t.completed).length;
@@ -246,7 +234,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
     });
     setWeeklyBarData(weekBar);
 
-    // RINGKASAN PERAN
     const categoryCounts = {};
     Object.keys(timeBlocks || {}).forEach(date => {
       const dateObj = new Date(date);
@@ -515,7 +502,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
     <>
       <div id="dashboard-report-content" className="space-y-6 pb-32 animate-fade-in">
 
-        {/* ===== WELCOME BANNER ===== */}
         <div className="relative overflow-hidden animated-gradient-bg rounded-3xl p-6 md:p-8 text-white spatial-shadow">
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
@@ -532,7 +518,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
                 Pusat kendali produktivitasmu. Data real-time dari seluruh modul Prodify tersinkronisasi di sini.
               </p>
 
-              {/* Quick Stats Row */}
               <div className="flex gap-3 mt-6 flex-wrap">
                 {[
                   { icon: '🔥', label: 'Streak', value: `${loginStreak} Hari` },
@@ -578,7 +563,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
           </div>
         </div>
 
-        {/* ===== COGNITIVE GUARD TRIGGER CARD ===== */}
         <div className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border border-teal-500/20 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 spatial-shadow mb-6">
           <div className="p-4 bg-teal-500/20 rounded-full shrink-0 relative">
             <div className="absolute inset-0 bg-teal-400 blur-xl opacity-30 rounded-full animate-pulse" />
@@ -637,10 +621,8 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
           </div>
         ) : (
           <>
-            {/* ===== INTELLIGENCE HUB ROW 1 ===== */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-          {/* Impact Score Card */}
           <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-6 rounded-3xl spatial-shadow flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-violet-50/50 dark:from-indigo-900/20 dark:to-violet-900/20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
             <Trophy className="w-8 h-8 text-indigo-400 drop-shadow-sm" />
@@ -651,7 +633,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
             <div className={`px-4 py-1.5 rounded-xl border text-xs font-bold ${impactMeta.bg} ${impactMeta.color} ${impactMeta.border} shadow-sm`}>
               {impactMeta.label}
             </div>
-            {/* Progress bar */}
             <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner mt-1">
               <div className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-1000 ease-out relative" style={{ width: `${impactScore}%` }}>
                 <div className="absolute top-0 right-0 bottom-0 w-4 bg-white/30 animate-pulse"></div>
@@ -659,7 +640,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
             </div>
           </div>
 
-          {/* Dynamic Insight Card */}
           <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-6 rounded-3xl spatial-shadow flex flex-col gap-4 relative overflow-hidden">
             <div className="flex items-center gap-2 mb-1">
               <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-xl shadow-sm"><Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" /></div>
@@ -676,7 +656,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
               </div>
             )}
 
-            {/* Hari ini ringkasan & Skripsi */}
             <div className="grid grid-cols-2 gap-3 mt-2">
               <div className="bg-indigo-50/80 dark:bg-indigo-500/10 border border-indigo-100/50 dark:border-indigo-500/20 rounded-xl p-3 text-center transition-transform hover:scale-[1.02] shadow-sm">
                 <Moon className="w-4 h-4 text-indigo-500 mx-auto mb-1.5" />
@@ -690,7 +669,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
               </div>
             </div>
 
-            {/* TRACKER SKRIPSI / PROJECT */}
             <div className="mt-3 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-100/50 dark:border-rose-500/20 rounded-xl p-4 shadow-sm transition-transform hover:scale-[1.01]">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
@@ -714,7 +692,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
             </div>
           </div>
 
-          {/* Weekly Activity Bar Chart */}
           <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-6 rounded-3xl spatial-shadow flex flex-col gap-3">
             <div className="flex items-center gap-2 mb-2">
               <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl shadow-sm"><TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /></div>
@@ -751,17 +728,14 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
           </div>
         </div>
 
-        {/* ===== BENTO GRID: Radar + Heatmap ===== */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
 
-          {/* Radar / Evaluation (The Wellness Check) */}
           <div className="lg:col-span-1 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-6 rounded-3xl spatial-shadow flex flex-col items-center relative overflow-hidden h-full">
             <div className="w-full flex items-center gap-2 mb-4 relative z-10">
               <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl shadow-sm"><Activity className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /></div>
               <h3 className="font-bold text-slate-700 dark:text-slate-100 text-sm">Radar Keseimbangan</h3>
             </div>
 
-            {/* Efek glow background saat evaluasi */}
             {evaluationState === 'evaluating' && <div className="absolute inset-0 bg-gradient-to-t from-indigo-50/80 dark:from-indigo-900/40 to-transparent pointer-events-none animate-fade-in" />}
 
             <div className="w-full flex-1 flex flex-col items-center justify-center z-10">
@@ -836,7 +810,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
             </div>
           </div>
 
-          {/* Heatmap */}
           <div className="lg:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-6 rounded-3xl spatial-shadow relative overflow-hidden flex flex-col h-full">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-full translate-x-1/3 -translate-y-1/3 pointer-events-none" />
 
@@ -888,7 +861,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
           </>
         )}
 
-        {/* ===== MOTIVATIONAL QUOTE ===== */}
         <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-6 spatial-shadow group hover:scale-[1.01] transition-transform">
           <div className="shrink-0 text-7xl font-black text-indigo-100 dark:text-indigo-900 leading-none select-none group-hover:text-indigo-200 transition-colors">"</div>
           <div className="flex-1">
@@ -934,7 +906,6 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
 
       </div>
 
-      {/* ===== DAILY CHECK-IN MODAL ===== */}
       {showCheckInModal && createPortal(
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 md:p-10 max-w-sm w-full shadow-2xl spatial-shadow flex flex-col items-center text-center relative overflow-hidden animate-fade-in-up border border-indigo-50 dark:border-slate-700">

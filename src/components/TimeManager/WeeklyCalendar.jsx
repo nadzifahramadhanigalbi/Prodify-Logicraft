@@ -12,7 +12,6 @@ const CATEGORY_META = {
   project: { label: "Project", icon: "🚀" },
 };
 
-// Fungsi untuk mendapatkan gradasi warna berdasarkan Kuadran (Style Referensi)
 const getTaskGradient = (quadrant) => {
   switch (quadrant) {
     case "urgent-important": return "bg-gradient-to-r from-rose-400 to-red-500 text-white shadow-rose-500/30";
@@ -64,7 +63,6 @@ const WeeklyCalendar = ({
     const todayKey = getLocalDateKey(new Date());
     const viewingKey = getLocalDateKey(currentDate);
     if (todayKey !== viewingKey) {
-      // Reminders are for "today". If user is viewing another day, jump to today first.
       const now = new Date();
       setCurrentDate(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
       setTimeout(() => scrollToHour(hourStr), 80);
@@ -131,14 +129,11 @@ const WeeklyCalendar = ({
   React.useEffect(() => {
       const checkUpcoming = () => {
       const now = new Date();
-      // Use local date key instead of todayBlocks because todayBlocks depends on currentDate (which could be another day selected by user)
       const dateKey = getLocalDateKey(now);
       const realTodayBlocks = scheduledBlocks[dateKey] || [];
 
       let nextEvent = null;
       let minDiff = Infinity;
-
-      // Check tasks
       realTodayBlocks.forEach(block => {
         const [h, m] = (block.time || "00:00").split(':').map(Number);
         const eventTime = new Date(now);
@@ -150,7 +145,6 @@ const WeeklyCalendar = ({
         }
       });
 
-      // Check classes
       const currentDay = now.getDay() === 0 ? 0 : now.getDay();
       academicSchedule.forEach(acad => {
         if (Number(acad.dayOfWeek) === currentDay) {
@@ -172,7 +166,7 @@ const WeeklyCalendar = ({
     };
 
     checkUpcoming();
-    const intv = setInterval(checkUpcoming, 30000); // check every 30 seconds
+    const intv = setInterval(checkUpcoming, 30000);
     return () => clearInterval(intv);
   }, [scheduledBlocks, academicSchedule]);
 
@@ -181,7 +175,6 @@ const WeeklyCalendar = ({
     if (typeof Notification === 'undefined') return;
     if (Notification.permission !== 'granted') return;
 
-    // Only notify when event is close, and never twice for the same event/time.
     if (Number(upcomingEvent.diffMins) > 10) return;
 
     const dateKey = getLocalDateKey(new Date());
@@ -197,9 +190,7 @@ const WeeklyCalendar = ({
         body: `${upcomingEvent.title} dalam ${Math.ceil(Number(upcomingEvent.diffMins))} menit.`,
       });
       setJson('prodify_timeline_last_notified_v1', notifyKey);
-    } catch {
-      // Ignore notification errors (unsupported/blocked).
-    }
+    } catch { /* ignore */ }
   }, [alertsEnabled, upcomingEvent]);
 
   React.useEffect(() => {
@@ -244,7 +235,6 @@ const WeeklyCalendar = ({
           Kalender Produktivitas
         </h2>
 
-        {/* Day Selector (Diubah menjadi Justify / Stretch) */}
         <div className="flex gap-2 overflow-x-auto w-full sm:w-auto custom-scrollbar pb-2 sm:pb-0">
           {next7Days.map((day, idx) => {
             const isSelected = isSameDay(day, currentDate);
@@ -279,7 +269,6 @@ const WeeklyCalendar = ({
 
       <div className="flex flex-col xl:flex-row gap-0 flex-1">
 
-        {/* KIRI: AREA TIME BLOCKING (DIROMBAK TOTAL SESUAI REFERENSI) */}
         <div
           className={isTimelineFullscreen
             ? "fixed inset-3 md:inset-6 z-[260] flex flex-col p-4 md:p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700"
@@ -447,10 +436,7 @@ const WeeklyCalendar = ({
             </div>
           </div>
 
-          {/* Container Timeline ala Gantt */}
           <div className="flex-1 bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm flex flex-col overflow-hidden relative">
-
-            {/* Header Kolom (Diganti Menjadi Indikator Kapasitas Mental Task & Activity Manageran) */}
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 py-3 px-4 ml-[60px] bg-slate-50/50 dark:bg-slate-900/50">
               <div className="flex items-center gap-2 shrink-0">
                 <Sun className="w-4 h-4 text-amber-500" />
@@ -464,13 +450,11 @@ const WeeklyCalendar = ({
               </span>
             </div>
 
-            {/* Area Scroll Timeline */}
             <div
               ref={timelineScrollRef}
               className={`relative flex-1 overflow-y-auto custom-scrollbar bg-[#fcfcfc] dark:bg-transparent ${isTimelineFullscreen ? 'max-h-[calc(100vh-220px)]' : 'max-h-[500px]'}`}
             >
 
-              {/* Garis Latar Belakang (Grid Vertikal) */}
               <div className="absolute inset-0 grid grid-cols-6 border-l border-slate-100 dark:border-slate-800/50 ml-[60px] pointer-events-none z-0">
                 {[...Array(6)].map((_, i) => <div key={i} className="border-r border-slate-100 dark:border-slate-800/50 h-full"></div>)}
               </div>
@@ -478,8 +462,6 @@ const WeeklyCalendar = ({
               {timeGrid.map((hour) => {
                 const blocksInHour = todayBlocks.filter((b) => b.time.startsWith(`${hour}:`));
                 const currentDay = currentDate.getDay();
-
-                // FILTER JADWAL AKADEMIK MULTIPLE JAM
                 const academicBlocksHere = academicSchedule.filter((s) => {
                   if (Number(s.dayOfWeek) !== currentDay) return false;
                   const startH = parseInt((s.startTime || "00:00").split(':')[0], 10);
@@ -496,14 +478,11 @@ const WeeklyCalendar = ({
                 return (
                   <div key={hour} data-hour={hour} className="flex min-h-[56px] border-b border-slate-100/80 dark:border-slate-800/80 group relative z-10 hover:bg-white dark:hover:bg-slate-800/30 transition-colors">
 
-                    {/* Kolom Jam */}
                     <div className="w-[60px] shrink-0 py-3 pr-3 flex flex-col items-end border-r border-slate-100 dark:border-slate-800/50 bg-white/50 dark:bg-transparent">
                       <span className={`text-xs font-bold transition-colors ${hasAnyBlock ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-600'}`}>
                         {hour}:00
                       </span>
                     </div>
-
-                    {/* Area Bar Tugas */}
                     <div className="flex-1 p-2 flex flex-col justify-center gap-2 relative">
 
                       {/* 1. Bar Jadwal Akademik (Solid Dark Blue/Slate Pill) */}
@@ -527,7 +506,6 @@ const WeeklyCalendar = ({
                         const categoryKey = block.category || parentTask?.category || "academic";
                         const catMeta = CATEGORY_META[categoryKey] || CATEGORY_META.academic;
 
-                        // Buat bar sedikit bergeser (margin-left) jika ada lebih dari 1 tugas di jam yang sama agar terlihat dinamis
                         const marginLeft = index === 1 ? 'ml-6' : index === 2 ? 'ml-12' : 'ml-2';
                         const barWidth = index === 0 ? 'w-full md:w-5/6' : 'w-11/12 md:w-3/4';
 
@@ -561,11 +539,8 @@ const WeeklyCalendar = ({
 
           </div>
         </div>
-
-        {/* KANAN: PANEL GOAL & UNASSIGNED (Sidebar Kanan ala Referensi) */}
         <aside className="w-full xl:w-80 shrink-0 bg-slate-50/50 dark:bg-slate-800/40 border-t xl:border-t-0 xl:border-l border-slate-200/60 dark:border-slate-700/60 p-6 md:p-8 flex flex-col gap-6 transition-colors">
 
-          {/* Card Goal (Dirombak lebih bersih) */}
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-3xl p-5 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 dark:bg-indigo-500/10 rounded-full -mr-8 -mt-8 blur-xl pointer-events-none transition-colors"></div>
             <div className="relative z-10">

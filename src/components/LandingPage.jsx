@@ -1,34 +1,30 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, Target, Shield, ListChecks, Activity,
   CalendarDays, BarChart2, Star, BookOpen, Focus, Flame, ChevronDown
 } from 'lucide-react';
 import { triggerDemoData } from '../utils/demoData';
-
-// IMPORT KOMPONEN HERO 3D KITA
 import HeroSection from './HeroSection';
 
 export default function LandingPage({ onStart }) {
   const handleNormalStart = (e) => {
     if (e) e.preventDefault();
     if (typeof window !== 'undefined') {
-      // CLEAR DEMO MODE KEY AND ANY DUMMY SESSION DATA
       window.sessionStorage.removeItem('isDemoMode');
       window.sessionStorage.clear();
     }
-    onStart(); // Proceed to login/dashboard
+    onStart();
   };
 
   const handleDemoLaunch = (e) => {
     if (e) e.preventDefault();
     triggerDemoData();
-    onStart(); // Proceed to dashboard after data is injected
+    onStart();
   };
 
   useEffect(() => {
     const onKeyDown = (e) => {
-      // Shortcut rahasia presentasi: Ctrl + Shift + D (Demo Data Inject)
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         handleDemoLaunch();
@@ -43,9 +39,8 @@ export default function LandingPage({ onStart }) {
     const el = document.getElementById(targetId);
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // Add fade-in flash animation
     el.classList.remove('nav-fade-in');
-    void el.offsetWidth; // force reflow
+    void el.offsetWidth;
     el.classList.add('nav-fade-in');
     setTimeout(() => el.classList.remove('nav-fade-in'), 900);
   };
@@ -57,9 +52,6 @@ export default function LandingPage({ onStart }) {
     { icon: Activity, title: "Aktivitas lebih terkontrol", desc: "Pantau kegiatan harian dan mingguan untuk memastikan keseimbangan studi dan kegiatan." }
   ];
 
-  // ==========================================
-  // DAFTAR 5 FITUR UTAMA PRODIFY YANG ELEGAN
-  // ==========================================
   const FEATURES = [
     { icon: BarChart2, title: "Productivity Dashboard", desc: "Pantau skor dampak, tingkat kelesuan mental, dan statistik produktivitasmu secara real-time.", tag: "Analytics" },
     { icon: BookOpen, title: "Smart Notes", desc: "Catat ide dan materi. Sorot teks apa saja untuk langsung mengubahnya menjadi tugas otomatis!", tag: "Knowledge" },
@@ -88,7 +80,6 @@ export default function LandingPage({ onStart }) {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#050814] text-slate-900 dark:text-white font-sans selection:bg-indigo-500/30 overflow-x-hidden">
 
-      {/* NAVBAR */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-[#050814]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 transition-colors">
         <div className="container mx-auto max-w-7xl flex items-center justify-between h-20 px-6">
           <div className="flex items-center gap-3">
@@ -110,10 +101,8 @@ export default function LandingPage({ onStart }) {
         </div>
       </nav>
 
-      {/* HERO SECTION DENGAN 3D ELEMENTS */}
       <HeroSection onStart={handleNormalStart} onDemo={handleDemoLaunch} />
 
-      {/* BENEFITS SECTION — Marquee / Conveyor Belt (find-it.id "Why You Should Join" style) */}
       <section id="benefits" className="py-24 md:py-32 bg-white dark:bg-slate-900/50 border-y border-slate-100 dark:border-white/5 overflow-hidden">
         <div className="container mx-auto px-6 max-w-7xl">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-14">
@@ -122,10 +111,8 @@ export default function LandingPage({ onStart }) {
           </motion.div>
         </div>
 
-        {/* Marquee Container */}
         <div className="w-full relative overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}>
           <div className="flex w-max animate-marquee gap-6 hover:[animation-play-state:paused]">
-            {/* Render BENEFITS twice for seamless loop */}
             {[...BENEFITS, ...BENEFITS].map((item, idx) => (
               <div key={idx}
                 className="group w-[300px] md:w-[360px] shrink-0 p-8 rounded-[2rem] bg-indigo-500/5 dark:bg-white/[0.06] backdrop-blur-md border border-slate-200/80 dark:border-white/10 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center aspect-[4/3]">
@@ -140,7 +127,6 @@ export default function LandingPage({ onStart }) {
         </div>
       </section>
 
-      {/* FEATURES SECTION (5 ITEM GRID) */}
       <section id="features" className="py-32 relative">
         <div className="container mx-auto px-6 max-w-6xl">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-20">
@@ -148,7 +134,6 @@ export default function LandingPage({ onStart }) {
             <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-medium">Lima fitur inti yang dirancang khusus dan terintegrasi untuk kebutuhan mahasiswa modern.</p>
           </motion.div>
 
-          {/* GRID UNTUK 5 ITEM: 3 di atas, 2 di tengah bawah (centered) pada layar besar */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
             {FEATURES.map((item, idx) => (
               <motion.div
@@ -175,8 +160,6 @@ export default function LandingPage({ onStart }) {
           </div>
         </div>
       </section>
-
-      {/* PREVIEW SECTION */}
       <section id="preview" className="py-32 bg-slate-100 dark:bg-slate-900/50 border-y border-slate-200 dark:border-white/5">
         <div className="container mx-auto px-6 max-w-6xl">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-16">
@@ -193,7 +176,6 @@ export default function LandingPage({ onStart }) {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
       <section id="testimonials" className="py-32 relative">
         <div className="container mx-auto px-6 max-w-6xl">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-20">
@@ -224,7 +206,6 @@ export default function LandingPage({ onStart }) {
         </div>
       </section>
 
-      {/* FAQ SECTION */}
       <section id="faq" className="py-32 bg-white dark:bg-slate-900/50 border-y border-slate-100 dark:border-white/5">
         <div className="container mx-auto px-6 max-w-4xl">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-16">
@@ -269,7 +250,6 @@ export default function LandingPage({ onStart }) {
         </div>
       </section>
 
-      {/* CTA SECTION */}
       <section className="py-16">
         <div className="container mx-auto px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
@@ -289,12 +269,9 @@ export default function LandingPage({ onStart }) {
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="pt-16 pb-8 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#050814]">
         <div className="container mx-auto px-6 max-w-7xl">
-          {/* Footer Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-16 mb-12">
-            {/* Brand Column */}
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-white/70 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-2 shadow-lg shadow-slate-200/40 dark:shadow-slate-950/40">
@@ -307,7 +284,6 @@ export default function LandingPage({ onStart }) {
               </p>
             </div>
 
-            {/* Navigation Column */}
             <div>
               <h4 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white mb-4">Navigasi</h4>
               <ul className="space-y-3">
@@ -321,7 +297,6 @@ export default function LandingPage({ onStart }) {
               </ul>
             </div>
 
-            {/* Features Column */}
             <div>
               <h4 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white mb-4">Fitur</h4>
               <ul className="space-y-3">
@@ -333,7 +308,6 @@ export default function LandingPage({ onStart }) {
               </ul>
             </div>
 
-            {/* CTA Column */}
             <div>
               <h4 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white mb-4">Mulai Sekarang</h4>
               <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium mb-5">
@@ -345,7 +319,6 @@ export default function LandingPage({ onStart }) {
             </div>
           </div>
 
-          {/* Divider */}
           <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 text-center sm:text-left">

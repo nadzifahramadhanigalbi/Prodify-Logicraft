@@ -2,7 +2,6 @@ const getDataUrlSizeBytes = (dataUrl) => {
   const idx = String(dataUrl || '').indexOf(',');
   if (idx === -1) return 0;
   const base64 = dataUrl.slice(idx + 1);
-  // base64 overhead: 4 chars represent 3 bytes (ignore padding for estimate)
   return Math.floor((base64.length * 3) / 4);
 };
 
@@ -60,7 +59,6 @@ export const compressImageFileToDataUrl = async (
   const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('Canvas tidak tersedia.');
 
-  // Try webp support once.
   canvas.width = 2;
   canvas.height = 2;
   ctx.fillStyle = '#fff';
@@ -81,7 +79,6 @@ export const compressImageFileToDataUrl = async (
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
 
-    // Try quality down first.
     currentQuality = Math.min(currentQuality, 0.9);
     let dataUrl = '';
     for (let q = currentQuality; q >= minQuality; q -= 0.08) {
@@ -90,8 +87,6 @@ export const compressImageFileToDataUrl = async (
       if (getDataUrlSizeBytes(candidate) <= maxBytes) return candidate;
       dataUrl = candidate;
     }
-
-    // Still too big: reduce dimensions and retry.
     scale *= 0.85;
   }
 

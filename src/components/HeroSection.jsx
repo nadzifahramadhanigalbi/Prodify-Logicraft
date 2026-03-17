@@ -12,32 +12,25 @@ export default function HeroSection({ onStart, onDemo }) {
   const elementRefs = useRef([]);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  // Scroll listener — tracks how far hero has been scrolled past
   useEffect(() => {
     const handleScroll = () => {
       if (!heroRef.current) return;
       const rect = heroRef.current.getBoundingClientRect();
       const heroHeight = rect.height;
-      // progress: 0 = hero at top, 1 = hero fully scrolled past viewport
       const progress = Math.min(Math.max(-rect.top / (heroHeight * 0.6), 0), 1);
       setScrollProgress(progress);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // initial check
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // DATA ELEMEN 3D — each with scatterX/scatterY for individual scatter direction
-  // scatterX/scatterY = how many vw/vh the element moves when fully scrolled (positive = right/down)
   const floatingElements = [
-    // === FOREGROUND ===
     { icon: BookOpen, color: "text-blue-500", pos: "top-[10%] left-[2%] md:left-[6%]", size: "w-16 h-16 md:w-20 md:h-20", delay: 0, animation: "animate-float-3d", depth: "opacity-100 z-10 blur-0", scatterX: -40, scatterY: -30 },
     { icon: Brain, color: "text-purple-500", pos: "top-[10%] right-[2%] md:right-[6%]", size: "w-20 h-20 md:w-24 md:h-24", delay: 0.2, animation: "animate-float-3d-reverse", depth: "opacity-100 z-10 blur-0", scatterX: 40, scatterY: -35 },
     { icon: Rocket, color: "text-indigo-500", pos: "top-[31%] left-[-2%] md:left-[2%]", size: "w-14 h-14 md:w-20 md:h-20", delay: 0.3, animation: "animate-float-3d", depth: "opacity-90 z-10 blur-[0.5px]", scatterX: -50, scatterY: 10 },
     { icon: Award, color: "text-amber-400", pos: "top-[31%] right-[-2%] md:right-[18%]", size: "w-12 h-12 md:w-16 md:h-16", delay: 0.7, animation: "animate-float-3d-reverse", depth: "opacity-90 z-10 blur-[0.5px]", scatterX: 50, scatterY: 15 },
-
-    // === MIDGROUND ===
     { icon: Target, color: "text-red-500", pos: "top-[30%] right-[15%] md:right-[2%]", size: "w-10 h-10 md:w-14 md:h-14", delay: 0.8, animation: "animate-float-3d", depth: "opacity-75 z-0 blur-[1px]", scatterX: 35, scatterY: -20 },
     { icon: Focus, color: "text-rose-500", pos: "top-[28%] left-[15%] md:left-[18%]", size: "w-10 h-10 md:w-12 md:h-12", delay: 1.0, animation: "animate-float-3d-reverse", depth: "opacity-75 z-0 blur-[1px]", scatterX: -30, scatterY: -15 },
     { icon: GraduationCap, color: "text-indigo-400", pos: "top-[6%] left-[25%] md:left-[28%]", size: "w-10 h-10 md:w-14 md:h-14", delay: 1.2, animation: "animate-float-3d", depth: "opacity-60 z-0 blur-[1.5px]", scatterX: -20, scatterY: -45 },
@@ -48,21 +41,17 @@ export default function HeroSection({ onStart, onDemo }) {
 
   return (
     <section ref={heroRef} className="relative pt-28 pb-20 overflow-hidden min-h-[95vh] flex flex-col items-center justify-center">
-      {/* Background Blurs (Cahaya Latar) */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none -z-20" />
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px] pointer-events-none -z-20" />
 
-      {/* 3D Floating Elements — each scatters individually on scroll (find-it.id style) */}
       <div className="absolute inset-0 pointer-events-none overflow-visible">
         {floatingElements.map((el, idx) => {
-          // Calculate scatter transform based on scroll progress
           const translateX = scrollProgress * el.scatterX;
           const translateY = scrollProgress * el.scatterY;
-          const scale = 1 - scrollProgress * 0.6; // scale from 1 → 0.4
-          const opacity = 1 - scrollProgress; // fade from 1 → 0
+          const scale = 1 - scrollProgress * 0.6;
+          const opacity = 1 - scrollProgress;
 
           return (
-            // Outer div: handles scroll-driven scatter (translate + scale + fade)
             <div
               key={idx}
               className={`absolute ${el.pos} hidden sm:flex items-center justify-center ${el.depth} transition-all duration-700 ease-in-out`}
@@ -73,7 +62,6 @@ export default function HeroSection({ onStart, onDemo }) {
                 backfaceVisibility: "hidden",
               }}
             >
-              {/* Inner motion.div: entrance spring animation + glass card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -128,7 +116,6 @@ export default function HeroSection({ onStart, onDemo }) {
           </button>
         </motion.div>
 
-        {/* APA ITU PRODIFY? — Full-width transparent card (find-it.id style) */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -144,7 +131,6 @@ export default function HeroSection({ onStart, onDemo }) {
               boxShadow: '0 8px 32px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255,255,255,0.3)',
             }}
           >
-            {/* Title */}
             <h2 className="text-2xl md:text-[1.75rem] font-black text-slate-800 dark:text-white text-center leading-tight">
               Get To Know{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
@@ -152,7 +138,6 @@ export default function HeroSection({ onStart, onDemo }) {
               </span>
             </h2>
 
-            {/* Description — gradient fade container like find-it.id */}
             <div className="w-[95%] md:w-[85%] p-5 md:p-7 rounded-[1.25rem] flex items-center justify-center text-center"
               style={{
                 background: 'linear-gradient(to bottom, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.06) 50%, transparent 100%)',
@@ -168,7 +153,6 @@ export default function HeroSection({ onStart, onDemo }) {
           </div>
         </motion.div>
 
-        {/* 3D App Preview Mockup Container */}
         <motion.div initial={{ opacity: 0, scale: 0.95, y: 50 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }}
           className="relative max-w-5xl mx-auto perspective-container pointer-events-auto z-20 mt-10">
           <div className="rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm p-2 rotate-x-3d">

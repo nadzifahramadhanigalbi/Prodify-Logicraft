@@ -6,11 +6,9 @@ export function useSynergyState() {
 
   useEffect(() => {
     const calculateSynergy = () => {
-      // Membaca state dari LocalStorage secara aman
       const savedState = localStorage.getItem('prodify_balance_state') || 'balanced';
       setBalanceState(savedState);
       
-      // Kalkulasi koin otomatis terpusat di sini
       if (savedState === 'buffed') {
         setEnergyCoins(13);
       } else if (savedState === 'debuffed') {
@@ -22,7 +20,6 @@ export function useSynergyState() {
 
     calculateSynergy();
     
-    // Auto-update jika ada perubahan dari tab/komponen lain
     window.addEventListener('storage', calculateSynergy);
     window.addEventListener('prodify-sync', calculateSynergy);
     return () => {

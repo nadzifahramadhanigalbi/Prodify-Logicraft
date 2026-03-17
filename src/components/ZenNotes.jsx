@@ -43,11 +43,8 @@ const ZenNotes = () => {
     const settings = getJson('prodify_settings', {});
     return settings.autoSaveNotes !== false;
   });
-
-  // === FITUR BARU: STATE UNTUK PANEL TARGET PROJECT ===
   const [showProjectPanel, setShowProjectPanel] = useState(false);
   const [projectTasks, setProjectTasks] = useState([]);
-
   const editorRef = useRef(null);
   const fileInputRef = useRef(null);
   const containerRef = useRef(null);
@@ -59,7 +56,6 @@ const ZenNotes = () => {
   const [lineWidth, setLineWidth] = useState(4);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showDrawCursor, setShowDrawCursor] = useState(false);
-
   const activePage = pages.find(p => p.id === activePageId);
   const wordCount = useMemo(() => {
     const html = activePage?.content || '';
@@ -67,14 +63,12 @@ const ZenNotes = () => {
     return text ? text.split(' ').length : 0;
   }, [activePage?.content]);
 
-  // === FITUR BARU: MENGAMBIL DATA TUGAS DARI BALANCE MATRIX ===
   useEffect(() => {
     const loadProjectTasks = () => {
       const allTasks = getJson('matrix_tasks', []);
       setProjectTasks(allTasks.filter(t => t.category === 'project'));
     };
     loadProjectTasks();
-    // Sinkronisasi otomatis jika data di tempat lain berubah
     window.addEventListener('storage', loadProjectTasks);
     window.addEventListener('prodify-sync', loadProjectTasks);
     return () => {
@@ -83,13 +77,11 @@ const ZenNotes = () => {
     };
   }, []);
 
-  // === FITUR BARU: MENCENTANG TUGAS DARI DALAM NOTES ===
   const toggleProjectTask = (id) => {
     const allTasks = getJson('matrix_tasks', []);
     const updated = allTasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
     setJson('matrix_tasks', updated);
 
-    // Update local state agar instan
     setProjectTasks(updated.filter(t => t.category === 'project'));
   };
 
@@ -153,7 +145,6 @@ const ZenNotes = () => {
     setPages(prevPages => prevPages.map(p => p.id === activePageId ? { ...p, [field]: value } : p));
   };
 
-  // --- LOGIKA WHITEBOARD (CANVAS 2D) ---
   useEffect(() => {
     if (noteMode === 'draw' && canvasRef.current) {
       const canvas = canvasRef.current;
@@ -212,7 +203,6 @@ const ZenNotes = () => {
   const startDrawing = (e) => {
     const pt = getClientPoint(e);
 
-    // Mobile-friendly: allow scrolling. Start drawing only after a short hold.
     if (pt.isTouch) {
       if (pendingDrawRef.current?.timer) clearTimeout(pendingDrawRef.current.timer);
       pendingDrawRef.current = {
@@ -239,20 +229,17 @@ const ZenNotes = () => {
   const draw = (e) => {
     const pt = getClientPoint(e);
 
-    // If touch: decide whether this gesture is scroll or draw.
     if (!isDrawing && pendingDrawRef.current && pt.isTouch) {
       const dx = pt.x - pendingDrawRef.current.startX;
       const dy = pt.y - pendingDrawRef.current.startY;
       const dist = Math.hypot(dx, dy);
 
-      // If user is swiping before hold completes, treat as scroll.
       if (!pendingDrawRef.current.ready && dist > 10) {
         clearTimeout(pendingDrawRef.current.timer);
         pendingDrawRef.current = null;
         return;
       }
 
-      // Start drawing after hold.
       if (pendingDrawRef.current.ready) {
         if (e.cancelable) e.preventDefault();
         setCursorPos({ x: pt.x, y: pt.y });
@@ -320,7 +307,6 @@ const ZenNotes = () => {
     }
   };
 
-  // --- LOGIKA TEKS EDITOR STANDARD ---
   const handleEditorInput = () => {
     if (editorRef.current) {
       updateActivePage('content', editorRef.current.innerHTML);
@@ -359,7 +345,6 @@ const ZenNotes = () => {
     const sourceEl = noteMode === 'text' ? editorRef.current : canvasRef.current;
     if (!sourceEl) return;
 
-    // Export dari clone (offscreen) supaya tidak flicker, terutama saat Dark Mode.
     const wrapper = document.createElement('div');
     wrapper.style.position = 'fixed';
     wrapper.style.left = '-10000px';
@@ -463,7 +448,6 @@ const ZenNotes = () => {
 
   const handleOpenModal = () => { setNewPageTitle(''); setIsModalOpen(true); };
 
-  // === FITUR BARU: FUNGSI BUAT CATATAN BIASA ===
   const createBlankPage = (e) => {
     e.preventDefault();
     const title = newPageTitle.trim() || 'Catatan Baru';
@@ -474,12 +458,11 @@ const ZenNotes = () => {
     setSearchQuery('');
   };
 
-  // === FITUR BARU: FUNGSI GENERATE TEMPLATE SKRIPSI ===
   const createTemplateSkripsi = (e) => {
     e.preventDefault();
     const title = newPageTitle.trim() || 'Draf Skripsi / Project';
 
-    // Ini HTML Template Cerdas yang akan langsung muncul di halaman
+
     const templateContent = `
       <h1 style="text-align: center;"><strong>[JUDUL SKRIPSI / PROJECT BESAR]</strong></h1>
       <p style="text-align: center; color: #64748b;"><em>Ditulis oleh: Mahasiswa Produktif</em></p>
@@ -506,7 +489,6 @@ const ZenNotes = () => {
     setIsModalOpen(false);
     setSearchQuery('');
 
-    // Otomatis buka panel kanan saat membuat Skripsi
     setShowProjectPanel(true);
   };
 
@@ -540,7 +522,6 @@ const ZenNotes = () => {
   };
 
   const handleKeyDown = (e) => {
-    // Markdown shortcuts (mahasiswa mode cepat)
     if (e.key === ' ') {
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0 && selection.isCollapsed) {
@@ -617,7 +598,7 @@ const ZenNotes = () => {
     const id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString();
     const newTask = { id, title: cleanText, category: taskCategory, quadrant: 'unassigned', energy: 1, completed: false, createdAt: new Date().toISOString() };
 
-    setJson('matrix_tasks', [...existingTasks, newTask]); // ELEGAN DAN OTOMATIS SYNC!
+    setJson('matrix_tasks', [...existingTasks, newTask]);
 
     setSaveStatus('Tugas Ditambahkan!');
     setTimeout(() => setSaveStatus('Tersimpan Otomatis'), 2000);
@@ -633,8 +614,7 @@ const ZenNotes = () => {
     const existingDeadlines = getJson('prodify_tasks', []);
     const taskCategory = showProjectPanel ? 'project' : 'academic';
     const id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString();
-
-    // Default deadline: besok 23:59 waktu lokal (aman untuk demo + bisa diedit di TimeManager).
+    
     const d = new Date();
     d.setDate(d.getDate() + 1);
     d.setHours(23, 59, 0, 0);
@@ -668,8 +648,6 @@ const ZenNotes = () => {
   return (
     <>
       <div ref={containerRef} className={`flex flex-col md:flex-row h-full liquid-glass dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-700/50 overflow-hidden spatial-shadow transition-all ${isFullscreen ? 'fixed inset-0 z-[999] bg-slate-50 dark:bg-slate-950 w-full h-[100dvh] rounded-none' : 'rounded-3xl relative'}`}>
-
-        {/* SIDEBAR KIRI */}
         <aside className="w-full md:w-64 shrink-0 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border-b md:border-b-0 md:border-r border-slate-200/50 dark:border-slate-700/50 flex flex-col min-h-[150px] md:h-full z-10">
           <div className="p-3 md:p-4 border-b border-slate-200 dark:border-slate-700/50">
             <div className="flex items-center justify-between mb-3">
@@ -705,8 +683,6 @@ const ZenNotes = () => {
               ))}
             </div>
           </div>
-
-          {/* Mode Switcher */}
           <div className="p-3 md:p-4 mt-auto border-t border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/80">
             <p className="text-[10px] text-slate-400 text-center font-bold mb-2 uppercase tracking-widest">Mode Kanvas</p>
             <div className="flex bg-slate-200/50 dark:bg-slate-800 rounded-lg p-1">
@@ -726,7 +702,6 @@ const ZenNotes = () => {
           </div>
         </aside>
 
-        {/* WORKSPACE TENGAH */}
         <main className="flex-1 flex flex-col relative min-w-0 h-[65%] md:h-full bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-0">
           {!activePageId ? (
             <div className="flex-1 overflow-y-auto p-4 flex items-center justify-center">
@@ -740,7 +715,6 @@ const ZenNotes = () => {
           ) : (
             <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
 
-              {/* HEADER TOOLBAR ATAS */}
               <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-700/50 px-4 md:px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0 gap-4">
                 <input type="text" placeholder="Judul Catatan..." value={activePage?.title || ''} onChange={(e) => updateActivePage('title', e.target.value)} className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white border-none outline-none bg-transparent placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:text-indigo-900 dark:focus:text-indigo-300 w-full transition-colors" />
 
@@ -752,8 +726,6 @@ const ZenNotes = () => {
                   <button onClick={toggleFullscreen} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
                     {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
                   </button>
-
-                  {/* === TOMBOL TOGGLE PROJECT PANEL (BARU) === */}
                   <button
                     onClick={() => setShowProjectPanel(!showProjectPanel)}
                     className={`flex items-center gap-1.5 p-2 md:px-3 text-xs font-bold rounded-xl border shadow-sm cursor-pointer transition-colors ${showProjectPanel ? 'bg-rose-600 text-white border-rose-500' : 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30 hover:bg-rose-50 dark:hover:bg-rose-500/10'}`}
@@ -762,16 +734,11 @@ const ZenNotes = () => {
                   </button>
                 </div>
               </div>
-
-              {/* TOOLBARS (TEXT ATAU DRAW) */}
               <div className="flex flex-col border-b border-slate-200/50 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl sticky top-0 z-20 shrink-0 shadow-sm">
 
                 {noteMode === 'text' ? (
                   <>
-                    {/* TEXT TOOLBAR ROW 1 */}
                     <div className="flex flex-wrap items-center gap-1.5 p-2 px-4 justify-start overflow-x-auto custom-scrollbar">
-
-                      {/* Font Options */}
                       <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200/60 dark:border-slate-700/60">
                         <select value={currentFont} onChange={(e) => { setCurrentFont(e.target.value); execCommand(e, 'fontName', e.target.value); }} className="bg-transparent text-slate-700 dark:text-slate-300 text-xs font-semibold focus:ring-0 outline-none cursor-pointer p-1.5 min-w-[120px]">
                           <option value="Arial">Arial</option>
@@ -796,7 +763,6 @@ const ZenNotes = () => {
 
                       <div className="w-px h-6 bg-slate-300 dark:bg-slate-700 mx-1"></div>
 
-                      {/* Undo/Redo */}
                       <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200/60 dark:border-slate-700/60">
                         <button onMouseDown={(e) => execCommand(e, 'undo')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><Undo className="w-4 h-4" /></button>
                         <button onMouseDown={(e) => execCommand(e, 'redo')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><Redo className="w-4 h-4" /></button>
@@ -805,24 +771,18 @@ const ZenNotes = () => {
                       </div>
 
                       <div className="w-px h-6 bg-slate-300 dark:bg-slate-700 mx-1"></div>
-
-                      {/* Headings */}
                       <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200/60 dark:border-slate-700/60">
                         <button onMouseDown={(e) => execCommand(e, 'formatBlock', 'H1')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><Heading1 className="w-4 h-4" /></button>
                         <button onMouseDown={(e) => execCommand(e, 'formatBlock', 'H2')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><Heading2 className="w-4 h-4" /></button>
                       </div>
 
                       <div className="w-px h-6 bg-slate-300 dark:bg-slate-700 mx-1"></div>
-
-                      {/* Formatting B/I/U/S */}
                       <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200/60 dark:border-slate-700/60">
                         <button onMouseDown={(e) => execCommand(e, 'bold')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><Bold className="w-4 h-4" /></button>
                         <button onMouseDown={(e) => execCommand(e, 'italic')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><Italic className="w-4 h-4" /></button>
                         <button onMouseDown={(e) => execCommand(e, 'underline')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><Underline className="w-4 h-4" /></button>
                         <button onMouseDown={(e) => execCommand(e, 'strikeThrough')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><Strikethrough className="w-4 h-4" /></button>
                       </div>
-
-                      {/* Alignment */}
                       <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 ml-1 border border-slate-200/60 dark:border-slate-700/60">
                         <button onMouseDown={(e) => execCommand(e, 'justifyLeft')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><AlignLeft className="w-4 h-4" /></button>
                         <button onMouseDown={(e) => execCommand(e, 'justifyCenter')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><AlignCenter className="w-4 h-4" /></button>
@@ -830,8 +790,6 @@ const ZenNotes = () => {
                       </div>
 
                       <div className="w-px h-6 bg-slate-300 dark:bg-slate-700 mx-1"></div>
-
-                      {/* Lists & Links */}
                       <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200/60 dark:border-slate-700/60">
                         <button onMouseDown={(e) => execCommand(e, 'insertUnorderedList')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><List className="w-4 h-4" /></button>
                         <button onMouseDown={(e) => execCommand(e, 'insertOrderedList')} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 tooltip"><ListOrdered className="w-4 h-4" /></button>
@@ -843,8 +801,6 @@ const ZenNotes = () => {
                       </div>
 
                     </div>
-
-                    {/* TEXT TOOLBAR ROW 2 */}
                     <div className="flex flex-wrap items-center gap-3 p-2 px-4 bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400 overflow-x-auto custom-scrollbar">
                       <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer border border-transparent hover:border-indigo-100 dark:hover:border-indigo-500/30">
                         <ImageIcon className="w-3.5 h-3.5" /> Gambar
@@ -857,11 +813,8 @@ const ZenNotes = () => {
                     </div>
                   </>
                 ) : (
-                  // DRAWING TOOLBAR (WHITEBOARD)
                   <div className="flex flex-wrap items-center gap-3 p-2 px-4 overflow-x-auto custom-scrollbar bg-slate-50/80 dark:bg-slate-900/80">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden md:block">Peralatan</span>
-
-                    {/* Markers */}
                     <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
                       {[
                         { color: 'black', label: 'Hitam' },
@@ -880,8 +833,6 @@ const ZenNotes = () => {
                     </div>
 
                     <div className="w-px h-6 bg-slate-300 dark:bg-slate-700 mx-1"></div>
-
-                    {/* Tools */}
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setPageOrientation(prev => prev === 'potrait' ? 'landscape' : 'potrait')}
@@ -914,11 +865,7 @@ const ZenNotes = () => {
                   </div>
                 )}
               </div>
-
-              {/* EDITOR AREA + KANAN PANEL (FLEX CONTAINER) */}
               <div className="flex-1 flex overflow-hidden w-full relative">
-
-                {/* AREA MENGETIK UTAMA */}
                 <div className={`flex-1 overflow-auto w-full custom-scrollbar bg-slate-200/50 dark:bg-slate-950 p-4 md:p-8 transition-all duration-300 ${showProjectPanel ? 'md:mr-72' : ''}`}>
                   {noteMode === 'text' ? (
                     <div
@@ -947,8 +894,6 @@ const ZenNotes = () => {
                       />
                     </div>
                   )}
-
-                  {/* Floating Popup "Jadikan Tugas" */}
                   {showTaskPopup && noteMode === 'text' && (
                     <div
                       className="absolute z-50 animate-fade-in-up bg-slate-900 dark:bg-slate-800 border dark:border-slate-700 text-white px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2"
@@ -975,8 +920,6 @@ const ZenNotes = () => {
                     </div>
                   )}
                 </div>
-
-                {/* === PANEL TARGET PROJECT MELAYANG DI KANAN === */}
                 <div className={`absolute right-0 top-0 bottom-0 w-72 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-l border-slate-200/60 dark:border-slate-700/60 shadow-2xl transition-transform duration-300 z-40 flex flex-col ${showProjectPanel ? 'translate-x-0' : 'translate-x-full'}`}>
                   <div className="p-4 border-b border-slate-200/60 dark:border-slate-700/60 flex justify-between items-center bg-rose-50/50 dark:bg-rose-900/10">
                     <h4 className="font-black text-rose-600 dark:text-rose-400 flex items-center gap-2 text-sm">
@@ -1033,8 +976,6 @@ const ZenNotes = () => {
             </button>
           </div>
         </main>
-
-        {/* MODAL BUAT HALAMAN (DENGAN TEMPLATE) */}
         {isModalOpen && portalRoot && createPortal(
           <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
             <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl w-full max-w-md border border-white dark:border-slate-700 overflow-hidden animate-fade-in-up">

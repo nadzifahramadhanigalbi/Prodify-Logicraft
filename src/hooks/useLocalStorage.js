@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getJson, setJson } from '../utils/storage';
 
-// Hook pintar untuk mencegah Error jika JSON rusak (Graceful Error Handling)
 export function useLocalStorage(key, initialValue) {
   const [storedValue, setStoredValue] = useState(() => {
     if (typeof window === "undefined") return initialValue;
@@ -9,7 +8,7 @@ export function useLocalStorage(key, initialValue) {
       return getJson(key, initialValue);
     } catch (error) {
       console.warn(`[Prodify Warn] Membaca storage ${key} gagal, menggunakan default.`, error);
-      return initialValue; // Fallback otomatis tanpa merusak aplikasi
+      return initialValue;
     }
   });
 
