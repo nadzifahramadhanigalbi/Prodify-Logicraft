@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, Target, Shield, ListChecks, Activity,
@@ -319,7 +319,7 @@ export default function LandingPage({ onStart }) {
 
           <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
             <p className="text-sm font-bold text-slate-400 dark:text-slate-500 text-center">
-              © {new Date().getFullYear()} Prodify. Ekosistem Produktivitas Mahasiswa. Dibuat untuk IFEST 14.
+              © {new Date().getFullYear()} Prodify. All Right Reserved by Logicraft.
             </p>
           </div>
         </div>
