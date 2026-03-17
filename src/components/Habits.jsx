@@ -74,7 +74,7 @@ const Habits = () => {
 
     if (isModified) {
       setHabits(updatedHabits);
-    }s
+    }
   }, []);
 
 
