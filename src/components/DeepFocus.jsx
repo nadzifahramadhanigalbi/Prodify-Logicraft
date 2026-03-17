@@ -2,16 +2,16 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Lottie from "lottie-react";
 import plantData from "../assets/lottie/plant.json";
 import {
-  Play, Trees, Volume2, VolumeX, AlertTriangle, Sprout, Skull, X, Flame, Search, Brain
+  Play, Trees, Volume2, VolumeX, AlertTriangle, Sprout, Skull, X, Flame, Search, Brain, Clock, Edit2
 } from "lucide-react";
-
 
 import { dispatchProdifySync, getJson, setJson } from "../utils/storage";
 
-const DURATION_OPTIONS = [
-  { label: '25 Menit', seconds: 25 * 60, desc: 'Pomodoro' },
-  { label: '45 Menit', seconds: 45 * 60, desc: 'Deep Work' },
-  { label: '90 Menit', seconds: 90 * 60, desc: 'Ultradian' },
+const INITIAL_DURATION_OPTIONS = [
+  { id: 'pomo', label: '25 Menit', seconds: 25 * 60, desc: 'Pomodoro' },
+  { id: 'deep', label: '45 Menit', seconds: 45 * 60, desc: 'Deep Work' },
+  { id: 'ultra', label: '90 Menit', seconds: 90 * 60, desc: 'Ultradian' },
+  { id: 'custom', label: 'Kustom', seconds: 15 * 60, desc: 'Atur Sendiri', isCustom: true },
 ];
 
 const FOCUS_SESSION_KEY = 'prodify_deepfocus_session_v1';
@@ -24,8 +24,11 @@ const getLocalDateKey = (dateObj = new Date()) => {
 };
 
 const DeepFocus = () => {
+  const [durationOptions, setDurationOptions] = useState(INITIAL_DURATION_OPTIONS);
   const [selectedDuration, setSelectedDuration] = useState(0);
-  const TOTAL_TIME = DURATION_OPTIONS[selectedDuration].seconds;
+  
+  const TOTAL_TIME = durationOptions[selectedDuration].seconds;
+  
   const [isRunning, setIsRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
   const fullscreenRef = useRef(null);
@@ -43,6 +46,10 @@ const DeepFocus = () => {
       return "";
     }
   });
+
+  // State untuk modal Custom Time
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [customMinInput, setCustomMinInput] = useState("15");
 
   const researchTimerRef = useRef(null);
   const researchBeepRef = useRef(null);
@@ -161,8 +168,17 @@ const DeepFocus = () => {
     const saved = getJson(FOCUS_SESSION_KEY, null);
     if (!saved) return;
 
+    if (saved.customSeconds) {
+      setDurationOptions(prev => {
+        const arr = [...prev];
+        arr[3].seconds = saved.customSeconds;
+        arr[3].label = `${Math.floor(saved.customSeconds / 60)} Menit`;
+        return arr;
+      });
+    }
+
     const durIdx = Number.isFinite(saved.selectedDuration) ? saved.selectedDuration : 0;
-    const clampedIdx = Math.min(Math.max(durIdx, 0), DURATION_OPTIONS.length - 1);
+    const clampedIdx = Math.min(Math.max(durIdx, 0), 3); // 3 is the custom index
     const restoredTimeLeft = Math.max(0, parseInt(saved.timeLeft, 10) || 0);
 
     if (saved.isRunning || (saved.treeState && saved.treeState !== 'idle')) {
@@ -201,6 +217,7 @@ const DeepFocus = () => {
 
     setJson(FOCUS_SESSION_KEY, {
       selectedDuration,
+      customSeconds: durationOptions[3].seconds,
       isRunning,
       timeLeft,
       treeState,
@@ -208,7 +225,7 @@ const DeepFocus = () => {
       isResearching,
       isMuted,
     });
-  }, [selectedDuration, isRunning, timeLeft, treeState, showWarning, isResearching, isMuted, preCountdown, TOTAL_TIME, removePersistedSession]);
+  }, [selectedDuration, isRunning, timeLeft, treeState, showWarning, isResearching, isMuted, preCountdown, TOTAL_TIME, durationOptions, removePersistedSession]);
 
   const killTree = useCallback(() => {
     setIsRunning(false);
@@ -289,14 +306,12 @@ const DeepFocus = () => {
     researchTimerRef.current = setTimeout(() => {
       killTree();
 
-      // 1. Coba Notif OS Asli
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification("Pohonmu Layu! 🥀", {
           body: "Waktu riset (2 menit) telah habis. Fokusmu terpecah dan pohon indigomu mati.",
         });
       }
 
-      // 2. BACKUP VISUAL (Fallback Modal di layar)
       setInAppAlert({
         title: "🚨 Pohon Mati Kelayuan!",
         message: "Batas waktu riset di luar tab (2 Menit) telah habis. Fokusmu terpecah."
@@ -437,9 +452,7 @@ const DeepFocus = () => {
       setStats((s) => ({ ...s, planted: s.planted + 1 }));
 
       const newSessionCount = parseInt(getJson(todayKey, '0')) + 1;
-
       setJson(todayKey, String(newSessionCount));
-
       setTodaySessions(newSessionCount);
 
       if ("Notification" in window && Notification.permission === "granted") {
@@ -475,9 +488,38 @@ const DeepFocus = () => {
     return () => clearTimeout(timer);
   }, [preCountdown, TOTAL_TIME]);
 
+  // Logika Pilihan Durasi dan Kustom Waktu
+  const handleDurationSelect = (index) => {
+    if (durationOptions[index].isCustom) {
+      setSelectedDuration(index);
+      setShowCustomModal(true);
+    } else {
+      setSelectedDuration(index);
+      setTimeLeft(durationOptions[index].seconds);
+    }
+  };
+
+  const handleSaveCustomTime = (e) => {
+    e.preventDefault();
+    let mins = parseInt(customMinInput, 10);
+    if (isNaN(mins) || mins < 1) mins = 1;
+    if (mins > 300) mins = 300; // Maksimal 5 Jam (300 Menit)
+
+    const newOptions = [...durationOptions];
+    newOptions[3] = {
+      ...newOptions[3],
+      label: `${mins} Menit`,
+      seconds: mins * 60
+    };
+    
+    setDurationOptions(newOptions);
+    setTimeLeft(mins * 60);
+    setShowCustomModal(false);
+  };
+
   const handleStart = () => {
     primeBeepAudio();
-    setTimeLeft(DURATION_OPTIONS[selectedDuration].seconds);
+    setTimeLeft(durationOptions[selectedDuration].seconds);
     if (appSettings.strictFocusMode !== false && fullscreenRef.current) {
       fullscreenRef.current.requestFullscreen().catch(() => { });
     }
@@ -586,10 +628,17 @@ const DeepFocus = () => {
           {treeState === "idle" || treeState === "success" || treeState === "dead" ? (
             <>
               {treeState === "idle" && (
-                <div className="flex bg-white/5 p-1.5 rounded-2xl w-full max-w-sm border border-white/10 backdrop-blur-md">
-                  {DURATION_OPTIONS.map((opt, i) => (
-                    <button key={i} onClick={() => { setSelectedDuration(i); setTimeLeft(opt.seconds); }} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${selectedDuration === i ? 'bg-indigo-600 text-white shadow-lg transform scale-[1.02]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
-                      <div className="mb-0.5">{opt.label}</div>
+                <div className="flex bg-white/5 p-1.5 rounded-2xl w-full max-w-md border border-white/10 backdrop-blur-md flex-wrap">
+                  {durationOptions.map((opt, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => handleDurationSelect(i)} 
+                      className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer min-w-[70px] ${selectedDuration === i ? 'bg-indigo-600 text-white shadow-lg transform scale-[1.02]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+                    >
+                      <div className="mb-0.5 flex items-center justify-center gap-1">
+                        {opt.label}
+                        {opt.isCustom && selectedDuration === i && <Edit2 className="w-3 h-3 text-indigo-300 ml-1" />}
+                      </div>
                       <div className={`text-[9px] font-medium ${selectedDuration === i ? 'text-indigo-200' : 'opacity-50'}`}>{opt.desc}</div>
                     </button>
                   ))}
@@ -627,6 +676,39 @@ const DeepFocus = () => {
           ) : null}
         </div>
       </div>
+
+      {/* Modal Input Waktu Kustom */}
+      {showCustomModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md animate-fade-in p-6">
+          <div className="bg-slate-900 border border-white/10 w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl flex flex-col items-center spatial-shadow">
+            <div className="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mb-6 border border-indigo-500/30">
+              <Clock className="w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Waktu Kustom</h3>
+            <p className="text-slate-400 font-medium mb-6 text-sm leading-relaxed">
+              Tentukan durasi fokus sesuai targetmu (1 - 300 menit).
+            </p>
+            <form onSubmit={handleSaveCustomTime} className="w-full">
+              <div className="relative mb-6 flex items-center justify-center">
+                <input
+                  type="number"
+                  min="1"
+                  max="300"
+                  value={customMinInput}
+                  onChange={(e) => setCustomMinInput(e.target.value)}
+                  className="w-full bg-slate-950/50 border border-white/10 text-white text-center text-4xl font-black rounded-2xl py-4 pr-16 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                  autoFocus
+                />
+                <span className="absolute right-6 text-slate-500 font-bold">Menit</span>
+              </div>
+              <div className="flex gap-3 w-full">
+                <button type="button" onClick={() => setShowCustomModal(false)} className="flex-1 py-3.5 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer border border-white/10">Batal</button>
+                <button type="submit" className="flex-1 py-3.5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer shadow-lg shadow-indigo-600/20">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {preCountdown !== null && (
         <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl">
