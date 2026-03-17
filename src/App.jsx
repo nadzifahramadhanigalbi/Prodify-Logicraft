@@ -37,6 +37,8 @@ function App() {
   const [activeMenu, setActiveMenu] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState(() => getJson('prodify_user', null));
+  const userRef = useRef(user);
+  const activeMenuRef = useRef(activeMenu);
 
   // STATE UNTUK MENGONTROL ROUTING LANDING PAGE VS LOGIN
   const [showLanding, setShowLanding] = useState(true);
@@ -48,6 +50,9 @@ function App() {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [activeMenu]);
+
+  useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { activeMenuRef.current = activeMenu; }, [activeMenu]);
 
   const [userLevel, setUserLevel] = useState(1);
   const [userExp, setUserExp] = useState(0);
@@ -71,38 +76,35 @@ function App() {
     return (window.location.hash || '#/').replace(/^#\/?/, '').trim();
   }, []);
 
-  const setHash = useCallback((key, { replace = false } = {}) => {
+  const setHash = useCallback((key, { replace = false, silent = false } = {}) => {
     if (typeof window === 'undefined') return;
     const next = key ? `#/${key}` : '#/';
-    if (replace) window.history.replaceState(null, '', next);
-    else window.location.hash = `/${key || ''}`;
+    if (replace) {
+      window.history.replaceState(null, '', next);
+      // replaceState tidak memicu 'hashchange' — dispatch manual agar UI tetap sinkron.
+      if (!silent) {
+        const evt = typeof HashChangeEvent !== 'undefined' ? new HashChangeEvent('hashchange') : new Event('hashchange');
+        window.dispatchEvent(evt);
+      }
+      return;
+    }
+    window.location.hash = `/${key || ''}`;
   }, []);
 
   const navigateTo = useCallback((target, opts = {}) => {
     const { replace = false } = opts;
     setIsSidebarOpen(false);
 
-    if (!user) {
-      if (target === 'login') {
-        setShowLanding(false);
-        setHash('login', { replace });
-        return;
-      }
-      if (target === 'landing') {
-        setShowLanding(true);
-        setHash('', { replace });
-        return;
-      }
-      setShowLanding(false);
-      setHash('login', { replace });
-      return;
+    const isAuthed = !!userRef.current;
+
+    if (!isAuthed) {
+      if (target === 'landing') return setHash('', { replace });
+      if (target === 'login') return setHash('login', { replace });
+      return setHash('login', { replace });
     }
 
-    if (APP_MENU_KEYS.has(target)) {
-      setActiveMenu(target);
-      setHash(target, { replace });
-    }
-  }, [setHash, user]);
+    if (APP_MENU_KEYS.has(target)) setHash(target, { replace });
+  }, [setHash]);
 
   const triggerCognitiveGuard = useCallback(() => {
     setCognitiveGuardSignal((n) => n + 1);
@@ -132,9 +134,11 @@ function App() {
   useEffect(() => {
     loadGlobalData();
     window.addEventListener('storage', loadGlobalData);
+    window.addEventListener('prodify-sync', loadGlobalData);
     window.addEventListener('themeChanged', loadGlobalData);
     return () => {
       window.removeEventListener('storage', loadGlobalData);
+      window.removeEventListener('prodify-sync', loadGlobalData);
       window.removeEventListener('themeChanged', loadGlobalData);
     }
   }, [loadGlobalData]);
@@ -143,23 +147,28 @@ function App() {
   useEffect(() => {
     const applyFromLocation = () => {
       const key = getHashKey();
-      if (!user) {
+      const currentUser = userRef.current;
+
+      if (!currentUser) {
         setShowLanding(key !== 'login');
         return;
       }
-      if (APP_MENU_KEYS.has(key)) setActiveMenu(key);
+
+      if (APP_MENU_KEYS.has(key)) {
+        setActiveMenu(key);
+        return;
+      }
+
+      // Jika user sudah login tapi hash invalid (atau #/login), paksa kembali ke dashboard.
+      const fallback = 'dashboard';
+      if (activeMenuRef.current !== fallback) setActiveMenu(fallback);
+      setHash(fallback, { replace: true, silent: true });
     };
 
     applyFromLocation();
     window.addEventListener('hashchange', applyFromLocation);
     return () => window.removeEventListener('hashchange', applyFromLocation);
-  }, [getHashKey, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const key = getHashKey();
-    if (!APP_MENU_KEYS.has(key)) setHash(activeMenu, { replace: true });
-  }, [activeMenu, getHashKey, setHash, user]);
+  }, [getHashKey, setHash]);
 
   // LOGIKA MUNCULNYA ONBOARDING STATIS
   useEffect(() => {
@@ -232,9 +241,11 @@ function App() {
     checkNotifs();
     const interval = setInterval(checkNotifs, 60000);
     window.addEventListener('storage', checkNotifs);
+    window.addEventListener('prodify-sync', checkNotifs);
     return () => {
       clearInterval(interval);
       window.removeEventListener('storage', checkNotifs);
+      window.removeEventListener('prodify-sync', checkNotifs);
     };
   }, [activeMenu]);
 
@@ -260,15 +271,15 @@ function App() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
             className="relative min-h-screen bg-[#050814] text-slate-300"
-          >
-            <button
-            onClick={() => navigateTo('landing')}
-              className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 px-2.5 py-2 sm:px-4 sm:py-2 bg-slate-900/40 sm:bg-white/5 backdrop-blur-md rounded-full sm:rounded-xl font-bold text-white border border-slate-700/60 sm:border-white/10 shadow-lg cursor-pointer hover:bg-slate-900/60 sm:hover:bg-white/10 hover:border-[#00f0ff]/50 transition-all flex items-center gap-1.5 sm:gap-2"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Kembali ke Beranda</span>
-            </button>
-            <Login onLogin={(u) => { setUser(u); setActiveMenu('dashboard'); setShowLanding(false); setHash('dashboard', { replace: true }); }} />
+              <button
+              onClick={() => navigateTo('landing')}
+                className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 px-2.5 py-2 sm:px-4 sm:py-2 bg-slate-900/40 sm:bg-white/5 backdrop-blur-md rounded-full sm:rounded-xl font-bold text-white border border-slate-700/60 sm:border-white/10 shadow-lg cursor-pointer hover:bg-slate-900/60 sm:hover:bg-white/10 hover:border-[#00f0ff]/50 transition-all flex items-center gap-1.5 sm:gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Kembali ke Beranda</span>
+              </button>
+            <Login onLogin={(u) => { setUser(u); setActiveMenu('dashboard'); setShowLanding(false); setHash('dashboard', { replace: true, silent: true }); }} />
           </MotionDiv>
         )}
       </AnimatePresence>
@@ -280,7 +291,7 @@ function App() {
     setUser(null);
     setActiveMenu('dashboard');
     setShowLanding(true);
-    setHash('', { replace: true });
+    setHash('', { replace: true, silent: true });
   };
 
   const renderContent = () => {

@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 
 // IMPORT STORAGE TINGKAT DEWA
-import { getJson, setJson } from "../utils/storage";
+import { dispatchProdifySync, getJson, setJson } from "../utils/storage";
 
 const DURATION_OPTIONS = [
   { label: '25 Menit', seconds: 25 * 60, desc: 'Pomodoro' },
@@ -144,7 +144,7 @@ const DeepFocus = () => {
       const isDemoMode = typeof window !== 'undefined' && window.sessionStorage.getItem('isDemoMode') === 'true';
       const storageOptions = isDemoMode ? window.sessionStorage : localStorage;
       storageOptions.removeItem(FOCUS_SESSION_KEY);
-      window.dispatchEvent(new Event('storage'));
+      dispatchProdifySync(FOCUS_SESSION_KEY);
     } catch {
       // ignore
     }
@@ -382,9 +382,7 @@ const DeepFocus = () => {
       const newSessionCount = parseInt(getJson(todayKey, '0')) + 1;
 
       // Untuk data sederhana (string angka), pakai localStorage biasa saja tidak masalah
-      // tapi dispatch event storage agar komponen lain tahu
       setJson(todayKey, String(newSessionCount));
-      window.dispatchEvent(new Event('storage'));
 
       setTodaySessions(newSessionCount);
 

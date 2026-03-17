@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, Target, Shield, ListChecks, Activity,
@@ -25,6 +25,18 @@ export default function LandingPage({ onStart }) {
     triggerDemoData();
     onStart(); // Proceed to dashboard after data is injected
   };
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      // Shortcut rahasia presentasi: Ctrl + Shift + D (Demo Data Inject)
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        handleDemoLaunch();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const handleNavClick = (e, targetId) => {
     e.preventDefault();

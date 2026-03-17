@@ -76,7 +76,11 @@ const ZenNotes = () => {
     loadProjectTasks();
     // Sinkronisasi otomatis jika data di tempat lain berubah
     window.addEventListener('storage', loadProjectTasks);
-    return () => window.removeEventListener('storage', loadProjectTasks);
+    window.addEventListener('prodify-sync', loadProjectTasks);
+    return () => {
+      window.removeEventListener('storage', loadProjectTasks);
+      window.removeEventListener('prodify-sync', loadProjectTasks);
+    };
   }, []);
 
   // === FITUR BARU: MENCENTANG TUGAS DARI DALAM NOTES ===
@@ -138,7 +142,11 @@ const ZenNotes = () => {
       setAutoSaveEnabled(settings.autoSaveNotes !== false);
     };
     window.addEventListener('storage', syncAutoSaveSetting);
-    return () => window.removeEventListener('storage', syncAutoSaveSetting);
+    window.addEventListener('prodify-sync', syncAutoSaveSetting);
+    return () => {
+      window.removeEventListener('storage', syncAutoSaveSetting);
+      window.removeEventListener('prodify-sync', syncAutoSaveSetting);
+    };
   }, []);
 
   const updateActivePage = (field, value) => {
@@ -517,11 +525,46 @@ const ZenNotes = () => {
 
     const existingTasks = getJson('matrix_tasks', []);
     const taskCategory = showProjectPanel ? 'project' : 'academic';
-    const newTask = { id: Date.now().toString(), title: cleanText, category: taskCategory, quadrant: 'unassigned', energy: 1, completed: false };
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString();
+    const newTask = { id, title: cleanText, category: taskCategory, quadrant: 'unassigned', energy: 1, completed: false, createdAt: new Date().toISOString() };
 
     setJson('matrix_tasks', [...existingTasks, newTask]); // ELEGAN DAN OTOMATIS SYNC!
 
     setSaveStatus('Tugas Ditambahkan!');
+    setTimeout(() => setSaveStatus('Tersimpan Otomatis'), 2000);
+    setShowTaskPopup(false);
+    setSelectedText('');
+    window.getSelection().removeAllRanges();
+  };
+
+  const saveToDeadline = () => {
+    const cleanText = selectedText.trim();
+    if (!cleanText) return;
+
+    const existingDeadlines = getJson('prodify_tasks', []);
+    const taskCategory = showProjectPanel ? 'project' : 'academic';
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString();
+
+    // Default deadline: besok 23:59 waktu lokal (aman untuk demo + bisa diedit di TimeManager).
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(23, 59, 0, 0);
+    const deadlineIso = d.toISOString();
+
+    const newTask = {
+      id,
+      text: cleanText,
+      deadline: deadlineIso,
+      completed: false,
+      completedAt: null,
+      notified: false,
+      category: taskCategory,
+      createdAt: new Date().toISOString(),
+    };
+
+    setJson('prodify_tasks', [...existingDeadlines, newTask]);
+
+    setSaveStatus('Deadline Ditambahkan!');
     setTimeout(() => setSaveStatus('Tersimpan Otomatis'), 2000);
     setShowTaskPopup(false);
     setSelectedText('');
@@ -818,9 +861,28 @@ const ZenNotes = () => {
 
                   {/* Floating Popup "Jadikan Tugas" */}
                   {showTaskPopup && noteMode === 'text' && (
-                    <div className="absolute z-50 animate-fade-in-up bg-slate-900 dark:bg-slate-800 border dark:border-slate-700 text-white px-3 py-2 rounded-xl shadow-xl flex items-center gap-2 cursor-pointer hover:bg-indigo-600 transition-colors" style={{ left: `${popupPos.x}px`, top: `${popupPos.y}px`, transform: 'translateX(-50%)' }} onClick={saveToMatrix} onMouseDown={(e) => e.preventDefault()}>
+                    <div
+                      className="absolute z-50 animate-fade-in-up bg-slate-900 dark:bg-slate-800 border dark:border-slate-700 text-white px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2"
+                      style={{ left: `${popupPos.x}px`, top: `${popupPos.y}px`, transform: 'translateX(-50%)' }}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
                       <CheckSquare className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold">{showProjectPanel ? 'Jadikan Target Project' : 'Kirim ke Task & Activity Manager'}</span>
+                      <span className="text-xs font-black whitespace-nowrap">{showProjectPanel ? 'Text → Project Task' : 'Text → Task'}</span>
+                      <div className="w-px h-5 bg-white/15 mx-1" />
+                      <button
+                        className="text-xs font-bold px-2.5 py-1 rounded-xl bg-white/10 hover:bg-indigo-600 transition-colors cursor-pointer"
+                        onClick={saveToMatrix}
+                        title="Masukkan ke Eisenhower Matrix"
+                      >
+                        Matrix
+                      </button>
+                      <button
+                        className="text-xs font-bold px-2.5 py-1 rounded-xl bg-white/10 hover:bg-rose-600 transition-colors cursor-pointer"
+                        onClick={saveToDeadline}
+                        title="Masukkan ke Deadline Tracker (default: besok 23:59)"
+                      >
+                        Deadline
+                      </button>
                     </div>
                   )}
                 </div>
