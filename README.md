@@ -26,11 +26,3 @@ Sesuai regulasi maksimal 5 fitur produktivitas, Prodify berfokus pada:
 * **Animasi:** Framer Motion (Micro-interactions)
 * **Ikon:** Lucide React
 * **Penyimpanan:** LocalStorage API
-
-## 💻 Cara Menjalankan Proyek Secara Lokal
-
-Jika Anda ingin menjalankan *source code* ini di komputer Anda, ikuti langkah-langkah berikut:
-
-1. **Clone repositori ini**
-   ```bash
-   git clone [https://github.com/nadzifahramadhanigalbi/Prodify-Logicraft.git](https://github.com/nadzifahramadhanigalbi/Prodify-Logicraft.git)
