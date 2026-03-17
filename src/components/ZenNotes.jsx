@@ -368,14 +368,64 @@ const ZenNotes = () => {
     wrapper.style.background = '#ffffff';
     wrapper.style.color = '#0f172a';
     wrapper.style.padding = '24px';
+    wrapper.style.overflow = 'hidden';
+    wrapper.style.fontFamily = "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, sans-serif";
+    wrapper.style.boxSizing = 'border-box';
 
     try {
+      const profileInfo = getJson('prodify_profileInfo', {});
+      const userSession = getJson('prodify_user', {});
+      const studentName = profileInfo?.name || userSession?.name || 'Mahasiswa';
+      const studentUsername = (profileInfo?.username || studentName || 'student').toString().trim().toLowerCase().replace(/\s+/g, '');
+      const printedAt = new Date().toLocaleDateString('id-ID', { dateStyle: 'full' });
+
+      const watermark = document.createElement('div');
+      watermark.style.position = 'absolute';
+      watermark.style.inset = '0';
+      watermark.style.display = 'flex';
+      watermark.style.alignItems = 'center';
+      watermark.style.justifyContent = 'center';
+      watermark.style.pointerEvents = 'none';
+      watermark.style.opacity = '0.06';
+      watermark.style.transform = 'rotate(-25deg)';
+      watermark.style.fontSize = '64px';
+      watermark.style.fontWeight = '900';
+      watermark.style.letterSpacing = '0.12em';
+      watermark.style.color = '#1e293b';
+      watermark.textContent = `PRODIFY • ${studentUsername}`;
+      wrapper.appendChild(watermark);
+
+      const header = document.createElement('div');
+      header.style.position = 'relative';
+      header.style.zIndex = '2';
+      header.style.border = '1px solid #e2e8f0';
+      header.style.borderRadius = '16px';
+      header.style.padding = '14px 16px';
+      header.style.marginBottom = '16px';
+      header.style.background = '#f8fafc';
+      header.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;">
+          <div>
+            <div style="font-size:12px;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:#4f46e5;">Dokumen Resmi</div>
+            <div style="font-size:18px;font-weight:900;margin-top:4px;color:#0f172a;">${(activePage.title || 'Catatan')}</div>
+            <div style="font-size:12px;font-weight:700;margin-top:6px;color:#334155;">${studentName} • @${studentUsername}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:#64748b;">Dicetak</div>
+            <div style="font-size:12px;font-weight:800;margin-top:6px;color:#0f172a;">${printedAt}</div>
+          </div>
+        </div>
+      `;
+      wrapper.appendChild(header);
+
       if (noteMode === 'text') {
         const clone = sourceEl.cloneNode(true);
         clone.contentEditable = 'false';
         clone.style.background = '#ffffff';
         clone.style.color = '#0f172a';
         clone.style.minHeight = 'auto';
+        clone.style.position = 'relative';
+        clone.style.zIndex = '2';
         wrapper.appendChild(clone);
       } else {
         const canvas = canvasRef.current;
@@ -384,6 +434,8 @@ const ZenNotes = () => {
         img.style.width = '100%';
         img.style.height = 'auto';
         img.src = canvas.toDataURL('image/png');
+        img.style.position = 'relative';
+        img.style.zIndex = '2';
         wrapper.appendChild(img);
       }
 
@@ -391,9 +443,9 @@ const ZenNotes = () => {
 
       await html2pdf().set({
         margin: 1,
-        filename: `${activePage.title || 'Catatan'}.pdf`,
+        filename: `${activePage.title || 'Catatan'}_${studentUsername}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'in', format: 'letter', orientation: pageOrientation === 'potrait' ? 'portrait' : 'landscape' }
       }).from(wrapper).save();
     } finally {
@@ -488,6 +540,43 @@ const ZenNotes = () => {
   };
 
   const handleKeyDown = (e) => {
+    // Markdown shortcuts (mahasiswa mode cepat)
+    if (e.key === ' ') {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0 && selection.isCollapsed) {
+        const node = selection.focusNode;
+        const el = node ? (node.nodeType === 3 ? node.parentElement : node) : null;
+        const block = el?.closest?.('h1,h2,h3,p,div,li');
+
+        if (block && editorRef.current && editorRef.current.contains(block)) {
+          const range = selection.getRangeAt(0);
+          const pre = range.cloneRange();
+          pre.selectNodeContents(block);
+          pre.setEnd(range.endContainer, range.endOffset);
+
+          const preText = pre.toString().replace(/\u200B/g, '').trim();
+          const applyFormat = (cmd, value = null) => {
+            e.preventDefault();
+            block.textContent = '';
+
+            const caret = document.createRange();
+            caret.selectNodeContents(block);
+            caret.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(caret);
+
+            document.execCommand(cmd, false, value);
+            handleEditorInput();
+          };
+
+          if (preText === '#') return applyFormat('formatBlock', 'H1');
+          if (preText === '##') return applyFormat('formatBlock', 'H2');
+          if (preText === '###') return applyFormat('formatBlock', 'H3');
+          if (preText === '-') return applyFormat('insertUnorderedList');
+        }
+      }
+    }
+
     if (e.key === 'Enter') {
       const selection = window.getSelection();
       const node = selection.focusNode;

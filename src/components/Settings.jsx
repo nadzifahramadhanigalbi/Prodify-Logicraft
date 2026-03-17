@@ -14,6 +14,8 @@ export default function Settings({ onLogout }) {
         const defaults = {
             darkMode: false,
             dashboardZenMode: false,
+            reducedMotion: false,
+            fontScale: 'normal', // normal | large | xlarge
             notifications: true,
             urgentReminders: true,    // Deadline < 2 Jam
             habitReminders: true,     // Habit harian
@@ -62,8 +64,8 @@ export default function Settings({ onLogout }) {
     const storagePercent = Math.min((usedStorageMB / 5.0) * 100, 100);
     const isDeleteConfirmed = deleteConfirmText.trim().toLowerCase().replace(/\s+/g, '') === deleteConfirmToken;
 
-    const handleToggle = (key) => {
-        const newSettings = { ...settings, [key]: !settings[key] };
+    const setSettingValue = (key, value) => {
+        const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
         setJson('prodify_settings', newSettings);
 
@@ -80,6 +82,8 @@ export default function Settings({ onLogout }) {
         setSavedMessage('Pengaturan disimpan otomatis');
         setTimeout(() => setSavedMessage(''), 2000);
     };
+
+    const handleToggle = (key) => setSettingValue(key, !settings[key]);
 
     const showNotification = (msg) => {
         setSavedMessage(msg);
@@ -240,6 +244,62 @@ export default function Settings({ onLogout }) {
                                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5 transition-colors">Sembunyikan chart & metrik kompleks di Dashboard, tampilkan Action Items saja.</p>
                             </div>
                             <Toggle isOn={!!settings.dashboardZenMode} onClick={() => handleToggle('dashboardZenMode')} />
+                        </div>
+                    </div>
+
+                    {/* Aksesibilitas & Tweaks */}
+                    <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-700/60 p-6 md:p-8 shadow-sm transition-colors">
+                        <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
+                            <div className="p-2.5 bg-teal-50 dark:bg-teal-500/10 text-teal-600 rounded-xl"><Shield className="w-5 h-5" /></div>
+                            <h3 className="font-bold text-lg text-slate-800 dark:text-white transition-colors">Aksesibilitas</h3>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="pr-4">
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white">Reduced Motion</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Kurangi animasi untuk menghindari motion sickness & mempercepat di laptop juri.</p>
+                                </div>
+                                <Toggle isOn={!!settings.reducedMotion} onClick={() => handleToggle('reducedMotion')} />
+                            </div>
+
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="pr-4">
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white">Ukuran Teks</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Biar terbaca jelas saat presentasi di proyektor.</p>
+                                </div>
+                                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-1">
+                                    {[
+                                        { id: 'normal', label: 'Normal' },
+                                        { id: 'large', label: 'Besar' },
+                                        { id: 'xlarge', label: 'XL' },
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.id}
+                                            onClick={() => setSettingValue('fontScale', opt.id)}
+                                            aria-pressed={settings.fontScale === opt.id}
+                                            className={`px-3 py-2 rounded-xl text-xs font-black transition-colors cursor-pointer ${settings.fontScale === opt.id ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'}`}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="pt-5 border-t border-slate-100 dark:border-slate-800">
+                                <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Shortcut Penting</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {[
+                                        { k: 'Ctrl + Shift + B', v: 'Cognitive Guard (Breathing)' },
+                                        { k: 'Ctrl + Shift + D', v: 'Inject Demo Data (Landing)' },
+                                    ].map((it) => (
+                                        <div key={it.k} className="flex items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3">
+                                            <span className="text-xs font-black text-slate-700 dark:text-slate-200">{it.v}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded-lg whitespace-nowrap">{it.k}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
 

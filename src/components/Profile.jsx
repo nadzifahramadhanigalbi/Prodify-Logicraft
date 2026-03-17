@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { User, Mail, GraduationCap, MapPin, Camera, Save, Phone, AtSign, TreePine, Award } from 'lucide-react';
+import { User, Mail, GraduationCap, MapPin, Camera, Save, Phone, AtSign, TreePine, Award, BadgeCheck, Lock, Timer, CalendarCheck2, BookOpen } from 'lucide-react';
 import { getJson, setJson } from '../utils/storage';
 import { makeAvatarDataUri } from '../utils/avatar';
 import { compressImageFileToDataUrl } from '../utils/image';
@@ -47,6 +47,7 @@ export default function Profile() {
     const [profile, setProfile] = useState(getInitialProfile);
     const [isEditing, setIsEditing] = useState(false);
     const [habitsTick, setHabitsTick] = useState(0);
+    const [syncTick, setSyncTick] = useState(0);
 
     const [forestStats, setForestStats] = useState(() => getJson('forest_stats', { planted: 0, dead: 0 }));
 
@@ -57,6 +58,7 @@ export default function Profile() {
                 setForestStats(getJson('forest_stats', { planted: 0, dead: 0 }));
             }
             if (!key || key === 'prodify_habits_v4') setHabitsTick((n) => n + 1);
+            if (!key || key === 'prodify_tasks' || key === 'zen_pages_multi' || String(key).startsWith('forest_today_')) setSyncTick((n) => n + 1);
         };
         window.addEventListener('storage', sync);
         window.addEventListener('prodify-sync', sync);
@@ -85,6 +87,58 @@ export default function Profile() {
 
     const forestSlots = 12;
     const forestFill = Math.min(forestSlots, Math.max(1, Math.floor(level * 0.8) + Math.floor((forestStats?.planted || 0) / 20)));
+
+    const achievements = useMemo(() => {
+        const localDateKey = (() => {
+            const d = new Date();
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().split('T')[0];
+        })();
+
+        const focusToday = parseInt(getJson(`forest_today_${localDateKey}`, '0'), 10) || 0;
+        const deadlines = getJson('prodify_tasks', []);
+        const onTimeCompleted = deadlines.filter((t) => {
+            if (!t?.completed) return false;
+            if (!t?.deadline) return false;
+            if (!t?.completedAt) return false;
+            const doneAt = new Date(t.completedAt).getTime();
+            const dueAt = new Date(t.deadline).getTime();
+            return Number.isFinite(doneAt) && Number.isFinite(dueAt) && doneAt <= dueAt;
+        }).length;
+
+        const notesCount = (getJson('zen_pages_multi', []) || []).length;
+
+        return [
+            {
+                id: 'iron_focus',
+                title: 'Iron Focus',
+                desc: 'Selesaikan 5 sesi Deep Focus dalam 1 hari.',
+                icon: Timer,
+                unlocked: focusToday >= 5,
+            },
+            {
+                id: 'master_of_time',
+                title: 'Master of Time',
+                desc: 'Selesaikan 10 tugas sebelum deadline.',
+                icon: CalendarCheck2,
+                unlocked: onTimeCompleted >= 10,
+            },
+            {
+                id: 'forest_builder',
+                title: 'Forest Builder',
+                desc: 'Tanam minimal 25 pohon lewat sesi fokus.',
+                icon: TreePine,
+                unlocked: (forestStats?.planted || 0) >= 25,
+            },
+            {
+                id: 'note_scholar',
+                title: 'Note Scholar',
+                desc: 'Buat 10 catatan (ZenNotes) untuk kuliah & project.',
+                icon: BookOpen,
+                unlocked: notesCount >= 10,
+            },
+        ];
+    }, [syncTick, forestStats?.planted]);
 
     const handleChange = (e) => {
         setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -231,6 +285,45 @@ export default function Profile() {
                                     );
                                 })}
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Achievements / Badges (Gamer Student) */}
+                    <div className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/50 rounded-3xl p-5 md:p-6">
+                        <div className="flex items-center justify-between gap-4">
+                            <div>
+                                <h4 className="text-sm font-black text-slate-800 dark:text-white tracking-tight">Achievements</h4>
+                                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">
+                                    Badge otomatis terbuka dari data lokal (tanpa backend).
+                                </p>
+                            </div>
+                            <div className="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-black uppercase tracking-widest">
+                                Gamer Mode
+                            </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {achievements.map((a) => {
+                                const Icon = a.icon;
+                                return (
+                                    <div key={a.id} className={`relative overflow-hidden rounded-3xl border p-4 transition-colors ${a.unlocked ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50'}`}>
+                                        <div className="flex items-start gap-3">
+                                            <div className={`p-2.5 rounded-2xl border shadow-sm ${a.unlocked ? 'bg-white/80 dark:bg-slate-900/40 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-white/70 dark:bg-slate-900/40 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}>
+                                                <Icon className="w-5 h-5" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className={`text-sm font-black ${a.unlocked ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'}`}>{a.title}</p>
+                                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{a.desc}</p>
+                                            </div>
+                                            {a.unlocked ? (
+                                                <BadgeCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" title="Unlocked" />
+                                            ) : (
+                                                <Lock className="w-5 h-5 text-slate-400 dark:text-slate-600" title="Locked" />
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
