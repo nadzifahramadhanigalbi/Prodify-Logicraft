@@ -146,6 +146,8 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
   const [weeklyBarData, setWeeklyBarData] = useState([]);
   const [categorySummary, setCategorySummary] = useState({});
   const [projectProgress, setProjectProgress] = useState({ total: 0, completed: 0, percentage: 0 });
+  const [balanceState, setBalanceState] = useState('balanced'); // State baru untuk AI Assistant
+  const [aiSuggestion, setAiSuggestion] = useState({ title: '', message: '', type: 'info' }); // State AI
 
   const radarChartRef = useRef(null);
   const barChartRef = useRef(null);
@@ -225,6 +227,8 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
     }
     setFocusSessionsToday(todaySessions);
 
+    setBalanceState(getJson('prodify_balance_state', 'balanced'));
+
     const weekBar = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(); d.setDate(d.getDate() - (6 - i));
       const ds = formatDateStr(d);
@@ -284,6 +288,42 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
   useEffect(() => {
     loadAllData();
   }, [loadAllData]);
+
+  // LOGIKA AI SYNERGY ASSISTANT 
+  useEffect(() => {
+    const deadlineTasks = getJson('prodify_tasks', []);
+    const matrixTasks = getJson('matrix_tasks', []);
+    const allTasks = [...deadlineTasks, ...matrixTasks];
+    
+    // Cari tugas yang masuk kuadran 1 (Mendesak & Penting)
+    const urgentTasks = allTasks.filter(t => !t.completed && t.quadrant === 'urgent-important').length;
+
+    if (balanceState === 'debuffed') {
+      setAiSuggestion({
+        title: "⚠️ Peringatan Burnout!",
+        message: `Energi mentalmu sedang terkuras. Coba abaikan tugas lain sementara waktu, fokus selesaikan ${urgentTasks > 0 ? urgentTasks : '1'} tugas darurat saja hari ini, lalu istirahatlah.`,
+        type: 'danger'
+      });
+    } else if (urgentTasks > 3) {
+      setAiSuggestion({
+        title: "🎯 Mode Bertahan Hidup",
+        message: `Ada ${urgentTasks} tugas Urgent & Important! Segera gunakan mode 'Deep Focus' 25 menit sekarang untuk mulai menyicilnya.`,
+        type: 'warning'
+      });
+    } else if (balanceState === 'buffed') {
+      setAiSuggestion({
+        title: "✨ Momentum Sempurna!",
+        message: "Konstelasi sinergimu menyala! Pikiranmu sedang sangat jernih. Ini waktu terbaik untuk mengerjakan Bab Skripsi atau membaca jurnal berat.",
+        type: 'success'
+      });
+    } else {
+      setAiSuggestion({
+        title: "✅ Kondisi Stabil",
+        message: "Semua terkendali dengan baik. Jangan lupa centang Habit Tracker-mu hari ini untuk menjaga rantai produktivitas tetap aktif.",
+        type: 'info'
+      });
+    }
+  }, [balanceState, completedTaskCount, activeDeadlineCount]);
 
   const toggleZenDashboardMode = useCallback(() => {
     setZenDashboardMode((prev) => {
@@ -581,6 +621,41 @@ const Dashboard = ({ onNavigate, onTriggerCognitiveGuard } = {}) => {
             <Sparkles className="w-5 h-5" /> Ambil Waktu Jeda
           </button>
         </div>
+
+        {/* PENAMBAHAN FITUR BARU: AI SYNERGY ASSISTANT */}
+        {aiSuggestion.title && !zenDashboardMode && (
+          <div className={`p-6 rounded-3xl border shadow-lg spatial-shadow relative overflow-hidden animate-fade-in-up ${
+            aiSuggestion.type === 'danger' ? 'bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800' :
+            aiSuggestion.type === 'warning' ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800' :
+            aiSuggestion.type === 'success' ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' :
+            'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800'
+          }`}>
+            <div className="absolute -right-10 -top-10 opacity-10 pointer-events-none">
+              <Brain className="w-40 h-40" />
+            </div>
+            <div className="relative z-10 flex gap-4 items-start">
+              <div className={`p-3 rounded-2xl shrink-0 shadow-sm ${
+                aiSuggestion.type === 'danger' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400' :
+                aiSuggestion.type === 'warning' ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400' :
+                aiSuggestion.type === 'success' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' :
+                'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400'
+              }`}>
+                <Brain className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <h3 className={`text-lg font-black mb-1 tracking-tight ${
+                  aiSuggestion.type === 'danger' ? 'text-rose-700 dark:text-rose-400' :
+                  aiSuggestion.type === 'warning' ? 'text-amber-700 dark:text-amber-400' :
+                  aiSuggestion.type === 'success' ? 'text-emerald-700 dark:text-emerald-400' :
+                  'text-indigo-700 dark:text-indigo-400'
+                }`}>AI Assistant: {aiSuggestion.title}</h3>
+                <p className="text-slate-600 dark:text-slate-300 font-medium text-sm md:text-base leading-relaxed">
+                  {aiSuggestion.message}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {zenDashboardMode ? (
           <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/50 rounded-3xl p-6 md:p-8 spatial-shadow">

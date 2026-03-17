@@ -5,7 +5,7 @@ import {
   Underline, Strikethrough, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2,
   Quote, Edit2, X, Check, Maximize2, Minimize2, Image as ImageIcon, Type,
   RemoveFormatting, CheckSquare, Printer, PenTool, Eraser, Palette, ArrowLeftRight,
-  PaintBucket, Link, Undo, Redo, Target, ChevronRight
+  PaintBucket, Link, Undo, Redo, Target, ChevronRight, Zap
 } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import { NekoMascotMini } from './NekoMascot';
@@ -57,6 +57,7 @@ const ZenNotes = () => {
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showDrawCursor, setShowDrawCursor] = useState(false);
   const activePage = pages.find(p => p.id === activePageId);
+
   const wordCount = useMemo(() => {
     const html = activePage?.content || '';
     const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -336,7 +337,7 @@ const ZenNotes = () => {
   const handleInsertCheckbox = (e) => {
     e.preventDefault();
     const id = Date.now();
-    const checkboxHtml = `<input type="checkbox" id="cb-${id}" style="margin-right: 8px; cursor: pointer;"> <label for="cb-${id}">To-Do Baru</label><br>`;
+    const checkboxHtml = `<input type="checkbox" id="cb-${id}" style="margin-right: 8px; cursor: pointer; accent-color: #4f46e5; width: 16px; height: 16px; transform: translateY(2px);"> <label for="cb-${id}">To-Do Baru</label><br>`;
     execCommand(e, 'insertHTML', checkboxHtml);
   };
 
@@ -458,29 +459,79 @@ const ZenNotes = () => {
     setSearchQuery('');
   };
 
+  // INOVASI KUNCI: AUTOMASI SKRIPSI LENGKAP & INTEGRASI MATRIX
   const createTemplateSkripsi = (e) => {
     e.preventDefault();
-    const title = newPageTitle.trim() || 'Draf Skripsi / Project';
-
+    const title = newPageTitle.trim() || 'Draf Skripsi & Jurnal';
 
     const templateContent = `
-      <h1 style="text-align: center;"><strong>[JUDUL SKRIPSI / PROJECT BESAR]</strong></h1>
-      <p style="text-align: center; color: #64748b;"><em>Ditulis oleh: Mahasiswa Produktif</em></p>
-      <hr>
+      <h1 style="text-align: center; color: #1e293b;"><strong>[JUDUL SKRIPSI / PENELITIAN]</strong></h1>
+      <p style="text-align: center; color: #64748b;"><em>Gunakan template ini untuk menstrukturkan jalan pikiranmu. Sorot (blok) teks mana saja lalu klik "Jadikan Tugas" untuk melemparnya ke Target Project!</em></p>
+      <hr style="margin: 20px 0;">
+      
+      <h2><strong>📌 PROGRESS CHECKLIST PENELITIAN</strong></h2>
+      <ul style="list-style-type: none; padding-left: 0;">
+        <li><input type="checkbox" style="accent-color: #10b981; transform: scale(1.2); margin-right: 8px;"> <strong>Tahap 1:</strong> Menemukan Fenomena & Gap Penelitian (Latar Belakang)</li>
+        <li><input type="checkbox" style="accent-color: #10b981; transform: scale(1.2); margin-right: 8px;"> <strong>Tahap 2:</strong> Mengumpulkan minimal 10 Jurnal Pendukung (Tinjauan Pustaka)</li>
+        <li><input type="checkbox" style="accent-color: #10b981; transform: scale(1.2); margin-right: 8px;"> <strong>Tahap 3:</strong> Menentukan Metode & Desain Kuesioner/Wawancara</li>
+        <li><input type="checkbox" style="accent-color: #10b981; transform: scale(1.2); margin-right: 8px;"> <strong>Tahap 4:</strong> Olah Data & Bimbingan Dosen</li>
+        <li><input type="checkbox" style="accent-color: #10b981; transform: scale(1.2); margin-right: 8px;"> <strong>Tahap 5:</strong> Revisi Final & Sidang</li>
+      </ul>
       <br>
-      <h2><strong>BAB 1: PENDAHULUAN</strong></h2>
+
+      <h2 style="color: #4f46e5;"><strong>BAB 1: PENDAHULUAN</strong></h2>
       <h3>1.1 Latar Belakang Masalah</h3>
-      <p>Tuliskan permasalahan utama yang ingin diselesaikan di sini...</p>
+      <p><em>(Tuliskan fenomena yang terjadi di lapangan. Apa kesenjangan antara teori/harapan dan realita? Kenapa masalah ini penting untuk diangkat?)</em></p>
       <br>
       <h3>1.2 Rumusan Masalah</h3>
       <ol>
-        <li>Apa masalah pertama yang akan dipecahkan?</li>
-        <li>Bagaimana metode penyelesaiannya?</li>
+        <li>Bagaimana kondisi [Variabel X] di [Lokasi/Objek Penelitian]?</li>
+        <li>Sejauh mana pengaruh [Variabel X] terhadap [Variabel Y]?</li>
       </ol>
       <br>
-      <h2><strong>BAB 2: TINJAUAN PUSTAKA</strong></h2>
-      <h3>2.1 Kajian Terdahulu</h3>
-      <p>Masukkan referensi jurnal dan buku landasan teori di sini...</p>
+      <h3>1.3 Tujuan Penelitian</h3>
+      <p>Untuk mengidentifikasi dan menganalisis dampak dari...</p>
+      <br>
+
+      <h2 style="color: #4f46e5;"><strong>BAB 2: TINJAUAN PUSTAKA</strong></h2>
+      <h3>2.1 Kajian Terdahulu (State of the Art)</h3>
+      <table style="width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1;">
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; background: #f8fafc;">Nama Peneliti (Tahun)</td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; background: #f8fafc;">Judul Jurnal</td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; background: #f8fafc;">Hasil Temuan</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;">[Peneliti 1, 2024]</td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;">[Pengaruh...]</td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;">[Menunjukkan bahwa...]</td>
+          </tr>
+        </tbody>
+      </table>
+      <br>
+      <h3>2.2 Kerangka Konseptual</h3>
+      <p><em>(Jelaskan hubungan antar variabel. Jika ada grand theory, tuliskan di sini.)</em></p>
+      <br>
+
+      <h2 style="color: #4f46e5;"><strong>BAB 3: METODOLOGI PENELITIAN</strong></h2>
+      <h3>3.1 Jenis dan Pendekatan</h3>
+      <p>Penelitian ini menggunakan pendekatan [Kuantitatif / Kualitatif] dengan metode [Eksplanatori / Deskriptif]...</p>
+      <br>
+      <h3>3.2 Teknik Pengumpulan Data</h3>
+      <ul>
+        <li>Data Primer: (Kuesioner / Wawancara mendalam dengan...)</li>
+        <li>Data Sekunder: (Studi literatur, laporan BPS, dll...)</li>
+      </ul>
+      <br>
+      
+      <h2 style="color: #4f46e5;"><strong>BAB 4: HASIL & PEMBAHASAN</strong></h2>
+      <p><em>(Bagian ini diisi setelah data terkumpul dan selesai diolah menggunakan SPSS / NVivo / Tools lain)</em></p>
+      <br>
+
+      <h2 style="color: #4f46e5;"><strong>BAB 5: KESIMPULAN & SARAN</strong></h2>
+      <p>Berdasarkan rumusan masalah, dapat disimpulkan bahwa...</p>
+      <br><br>
     `;
 
     const newPage = { id: Date.now(), title: title, content: templateContent, drawingData: null };
@@ -488,8 +539,23 @@ const ZenNotes = () => {
     setActivePageId(newPage.id);
     setIsModalOpen(false);
     setSearchQuery('');
-
+    
+    // AUTOMASI: Langsung tembak 3 tugas awal ke Eisenhower Matrix kategori 'Project'
+    const existingTasks = getJson('matrix_tasks', []);
+    const autoTasks = [
+      { id: `auto1_${Date.now()}`, title: 'Drafting Bab 1: Latar Belakang & Rumusan Masalah', category: 'project', quadrant: 'urgent-important', energy: 2, completed: false, createdAt: new Date().toISOString() },
+      { id: `auto2_${Date.now()}`, title: 'Kumpulkan 5 Jurnal Pendukung untuk Bab 2', category: 'project', quadrant: 'not-urgent-important', energy: 1, completed: false, createdAt: new Date().toISOString() },
+      { id: `auto3_${Date.now()}`, title: 'Bimbingan Skripsi ke Dosen Pembimbing', category: 'project', quadrant: 'not-urgent-important', energy: 2, completed: false, createdAt: new Date().toISOString() },
+    ];
+    setJson('matrix_tasks', [...existingTasks, ...autoTasks]);
+    setProjectTasks(prev => [...prev, ...autoTasks]);
     setShowProjectPanel(true);
+
+    // Alert keberhasilan automasi
+    prodifyAlert({ 
+      title: "Automasi Skripsi Aktif! 🚀", 
+      message: "Template komprehensif berhasil dimuat.\n\n3 Tugas Awal telah ditambahkan secara otomatis ke panel Target Project di sebelah kanan untuk mempercepat progresmu!" 
+    });
   };
 
   const deletePage = (e, id) => {
@@ -599,6 +665,11 @@ const ZenNotes = () => {
     const newTask = { id, title: cleanText, category: taskCategory, quadrant: 'unassigned', energy: 1, completed: false, createdAt: new Date().toISOString() };
 
     setJson('matrix_tasks', [...existingTasks, newTask]);
+    
+    // Sinkronisasi dengan UI panel kanan jika aktif
+    if (taskCategory === 'project') {
+      setProjectTasks(prev => [...prev, newTask]);
+    }
 
     setSaveStatus('Tugas Ditambahkan!');
     setTimeout(() => setSaveStatus('Tersimpan Otomatis'), 2000);
@@ -705,11 +776,14 @@ const ZenNotes = () => {
         <main className="flex-1 flex flex-col relative min-w-0 h-[65%] md:h-full bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-0">
           {!activePageId ? (
             <div className="flex-1 overflow-y-auto p-4 flex items-center justify-center">
-              <div className="flex flex-col items-center text-slate-400 opacity-80">
+              <div className="flex flex-col items-center text-slate-400 opacity-80 text-center">
                 <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 mb-4">
                   <Layout className="w-12 h-12 text-indigo-200 dark:text-indigo-500/50" strokeWidth={1.5} />
                 </div>
-                <p className="text-sm font-bold tracking-wide">Pilih atau buat halaman.</p>
+                <p className="text-sm font-bold tracking-wide text-slate-600 dark:text-slate-300">Pilih halaman atau mulai nulis Skripsi.</p>
+                <button onClick={handleOpenModal} className="mt-4 px-4 py-2 bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 font-bold rounded-xl text-sm transition-colors hover:bg-indigo-100 cursor-pointer">
+                  Buat Dokumen Baru
+                </button>
               </div>
             </div>
           ) : (
@@ -896,7 +970,7 @@ const ZenNotes = () => {
                   )}
                   {showTaskPopup && noteMode === 'text' && (
                     <div
-                      className="absolute z-50 animate-fade-in-up bg-slate-900 dark:bg-slate-800 border dark:border-slate-700 text-white px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2"
+                      className="absolute z-50 animate-fade-in-up bg-slate-900 dark:bg-slate-800 border border-slate-700 text-white px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2"
                       style={{ left: `${popupPos.x}px`, top: `${popupPos.y}px`, transform: 'translateX(-50%)' }}
                       onMouseDown={(e) => e.preventDefault()}
                     >
@@ -977,11 +1051,12 @@ const ZenNotes = () => {
           </div>
         </main>
         {isModalOpen && portalRoot && createPortal(
-          <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in p-4">
             <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl w-full max-w-md border border-white dark:border-slate-700 overflow-hidden animate-fade-in-up">
               <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 border-b border-indigo-100 dark:border-indigo-500/20 px-6 py-5 flex items-center gap-3">
                 <NekoMascotMini className="w-12 h-12 shrink-0" />
-                <div className="relative bg-white dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 rounded-2xl rounded-tl-none px-4 py-2">
+                <div className="relative bg-white dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 rounded-2xl rounded-tl-none px-4 py-2 shadow-sm">
+                  <div className="absolute -left-2 top-3 w-0 h-0 border-t-[6px] border-t-transparent border-r-[8px] border-r-white dark:border-r-slate-800 border-b-[6px] border-b-transparent"></div>
                   <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400 italic">"Mau nulis catatan biasa, atau nyicil skripsi nih? Nyaa~ 🎓"</p>
                 </div>
               </div>
@@ -995,13 +1070,15 @@ const ZenNotes = () => {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <button onClick={createTemplateSkripsi} className="w-full px-6 py-4 rounded-xl font-bold text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 shadow-md cursor-pointer flex items-center justify-center gap-2 transition-transform active:scale-95">
-                    <Target className="w-5 h-5" /> Gunakan Template Skripsi/Project
+                  <button onClick={createTemplateSkripsi} className="w-full px-6 py-4 rounded-xl font-bold text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 shadow-md cursor-pointer flex items-center justify-center gap-2 transition-transform active:scale-95 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                    <Zap className="w-5 h-5 relative z-10" /> 
+                    <span className="relative z-10">Automasi Template Skripsi</span>
                   </button>
                   <button onClick={createBlankPage} className="w-full px-6 py-4 rounded-xl font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 cursor-pointer flex items-center justify-center gap-2 transition-transform active:scale-95 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/30">
-                    <FileText className="w-5 h-5" /> Catatan Kosong
+                    <FileText className="w-5 h-5" /> Catatan Kosong Biasa
                   </button>
-                  <button onClick={() => setIsModalOpen(false)} className="mt-2 text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">Batal</button>
+                  <button onClick={() => setIsModalOpen(false)} className="mt-2 text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer transition-colors">Batal</button>
                 </div>
               </div>
             </div>

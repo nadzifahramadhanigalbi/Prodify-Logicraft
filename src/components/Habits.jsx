@@ -7,6 +7,7 @@ import {
 import { NekoMascotMini, NekoMascotFull } from './NekoMascot';
 
 import { getJson, setJson } from '../utils/storage';
+import { playSuccessSound } from '../utils/Audio';
 
 const formatDateStr = (dateObj) => {
   const d = new Date(dateObj);
@@ -76,7 +77,6 @@ const Habits = () => {
       setHabits(updatedHabits);
     }
   }, []);
-
 
   // 2. Gunakan setJson agar aman dan sinkron
   useEffect(() => {
@@ -282,6 +282,7 @@ const Habits = () => {
           const newCount = getCurrentCount(habit) + 1;
           const isJustCompleted = newCount === habit.targetCount;
           if (isJustCompleted) {
+            playSuccessSound(); // ✨ MEMUTAR SOUND EFFECT SAAT HABIT TARGET TERCAPAI
             setShowCelebration(true);
             setTimeout(() => setShowCelebration(false), 2500);
           }

@@ -10,6 +10,7 @@ import WeeklyCalendar from "./TimeManager/WeeklyCalendar";
 import EisenhowerMatrix from "./TimeManager/EisenhowerMatrix";
 import { getJson, setJson } from '../utils/storage';
 import { useSynergyState } from '../hooks/useSynergyState';
+import { playSuccessSound } from '../utils/Audio';
 
 const VALID_QUADRANTS = [
   "urgent-important", "not-urgent-important", "urgent-not-important", "not-urgent-not-important", "unassigned",
@@ -117,6 +118,7 @@ const TimeManager = () => {
       }
     };
   }, []);
+
   useEffect(() => {
     const syncSettings = () => setAppSettings(getJson("prodify_settings", {}));
     const handleStorage = (e) => {
@@ -131,6 +133,7 @@ const TimeManager = () => {
       window.removeEventListener("prodify-sync", handleStorage);
     };
   }, []);
+
   useEffect(() => { setJson("prodify_tasks", deadlineTasks); }, [deadlineTasks]);
   useEffect(() => { setJson("matrix_tasks", tasks); }, [tasks]);
   useEffect(() => { setJson("time_blocks", scheduledBlocks); }, [scheduledBlocks]);
@@ -161,6 +164,7 @@ const TimeManager = () => {
     const interval = setInterval(checkDeadlines, 30000);
     return () => clearInterval(interval);
   }, [deadlineTasks, appSettings, triggerNotification]);
+
   const handleAddClass = (e) => {
     e.preventDefault();
     if (!newClass.course.trim()) return;
@@ -173,6 +177,7 @@ const TimeManager = () => {
   const removeClass = (id) => {
     setAcademicSchedule(academicSchedule.filter((c) => c.id !== id));
   };
+
   const handleAddDeadlineTask = (e) => {
     e.preventDefault();
     if (!newDeadlineTask.trim() || !newDeadlineTime) return;
@@ -181,7 +186,16 @@ const TimeManager = () => {
   };
 
   const toggleDeadlineTask = (id) => {
-    setDeadlineTasks(deadlineTasks.map((t) => t.id === id ? { ...t, completed: !t.completed, completedAt: !t.completed ? new Date().toISOString() : null } : t));
+    setDeadlineTasks(deadlineTasks.map((t) => {
+      if (t.id === id) {
+        const isNowCompleted = !t.completed;
+        if (isNowCompleted) {
+          playSuccessSound(); // Memutar SFX saat task deadline selesai!
+        }
+        return { ...t, completed: isNowCompleted, completedAt: isNowCompleted ? new Date().toISOString() : null };
+      }
+      return t;
+    }));
   };
 
   const deleteDeadlineTask = (id) => setDeadlineTasks(deadlineTasks.filter((t) => t.id !== id));
@@ -217,7 +231,16 @@ const TimeManager = () => {
   };
 
   const toggleTaskStatus = (taskId) => {
-    setTasks(tasks.map((t) => t.id === taskId ? { ...t, completed: !t.completed, completedAt: !t.completed ? new Date().toISOString() : null } : t));
+    setTasks(tasks.map((t) => {
+      if (t.id === taskId) {
+        const isNowCompleted = !t.completed;
+        if (isNowCompleted) {
+          playSuccessSound(); // Memutar SFX saat task biasa selesai!
+        }
+        return { ...t, completed: isNowCompleted, completedAt: isNowCompleted ? new Date().toISOString() : null };
+      }
+      return t;
+    }));
   };
 
   const deleteTask = (taskId) => {
